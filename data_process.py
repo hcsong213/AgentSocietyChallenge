@@ -38,7 +38,7 @@ REQUIRED_FILES_GOODREADS = [
 def load_data(file_path):
     """Load JSON data into a Pandas DataFrame with progress bar."""
     data = []
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding="utf8") as file:
         for line in tqdm(file, desc=f"Loading {file_path}", unit=" lines"):
             data.append(json.loads(line))
     return pd.DataFrame(data)
@@ -170,7 +170,7 @@ def merge_business_data(yelp_business, amazon_meta, goodreads_books, output_file
     # 如果指定了输出文件，则保存
     if output_file:
         logging.info(f"Saving merged business data to {output_file}...")
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w',  encoding="utf8") as f:
             for item in merged_json:
                 f.write(json.dumps(item) + '\n')
 
@@ -213,7 +213,7 @@ def merge_review_data(yelp_reviews, amazon_reviews, goodreads_reviews, output_fi
     # 如果指定了输出文件，则保存
     if output_file:
         logging.info(f"Saving merged review data to {output_file}...")
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding="utf8") as f:
             for item in merged_json:
                 f.write(json.dumps(item) + '\n')
 
@@ -245,7 +245,7 @@ def create_unified_users(yelp_users, amazon_reviews, goodreads_reviews, output_f
     # 如果指定了输出文件，则保存
     if output_file:
         logging.info(f"Saving merged user data to {output_file}...")
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding="utf8") as f:
             for item in merged_json:
                 f.write(json.dumps(item) + '\n')
 
