@@ -5,7 +5,12 @@ from .infinigence_embeddings import InfinigenceEmbeddings
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import json
 import logging
-import subprocess
+try:
+    import ollama
+except Exception as _e:
+    # Fail fast: this module is intended to use the ollama Python API only.
+    raise RuntimeError("The 'ollama' Python package is required for OllamaLLM. Install it with `pip install ollama`. Original error: {0}".format(_e)) from _e
+import logging
 logger = logging.getLogger("websocietysimulator")
 
 class LLMBase:
@@ -148,14 +153,11 @@ class OpenAILLM(LLMBase):
 
 
 class OllamaLLM(LLMBase):
-    """Simple local Ollama wrapper using the `ollama` CLI.
+    """Ollama wrapper which uses the installed `ollama` Python API only.
 
-    This implementation invokes the `ollama generate <model> "prompt"`
-    CLI command. It is intentionally lightweight for quick prototyping.
-
-    Requirements:
-    - `ollama` CLI must be installed and available on PATH.
-    - A local Ollama model with the provided name must be downloaded/available.
+    This class assumes the `ollama` Python package is installed and will
+    raise helpful errors if required entrypoints aren't present. It does not
+    attempt to call the `ollama` CLI.
     """
 
     def __init__(self, model: str = "llama2", timeout: int = 60):
@@ -172,37 +174,23 @@ class OllamaLLM(LLMBase):
         prompt = self._messages_to_prompt(messages)
         model_name = model or self.model
 
-        # Try commonly-used Ollama CLI subcommands in order of likelihood.
-        # Newer Ollama uses `ollama run <model> <prompt>`. Older examples may use
-        # `ollama generate` which some versions don't support. Try `run` first,
-        # then fall back to `generate` if `run` fails with unknown-command.
-        tried = []
-        for subcmd in ("run", "generate"):
-            cmd = ["ollama", subcmd, model_name, prompt]
-            tried.append(" ".join(cmd))
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=self.timeout, check=True)
-                output = result.stdout.strip()
-                if n == 1:
-                    return output
-                else:
-                    return [output] * n
-            except subprocess.CalledProcessError as e:
-                stderr = (e.stderr or "").lower()
-                # If this subcommand isn't supported, try the next one.
-                if "unknown command" in stderr or "is not a valid command" in stderr:
-                    logger.debug(f"ollama subcommand '{subcmd}' not supported, trying next (stderr: {e.stderr})")
-                    continue
-                # Otherwise it's a real failure; raise with context.
-                logger.error(f"Ollama {subcmd} failed (exit {e.returncode}): {e.stderr}")
-                raise
-            except Exception as e:
-                logger.error(f"Ollama invocation error with subcommand '{subcmd}': {e}")
-                raise
+        # Call the single chosen API method directly (based on local probe):
+        # use `ollama.generate(model, prompt)` and parse its `.response` field.
+        result = ollama.generate(model_name, prompt)
 
-        # If we reached here, none of the tried subcommands worked.
-        logger.error(f"Ollama invocation failed; tried commands: {tried}")
-        raise RuntimeError(f"Ollama CLI did not accept any tested subcommands. Tried: {tried}")
+        # Normalize result to a string
+        output = None
+        # Parse the GenerateResponse: expect a `.response` attribute/string.
+        # This intentionally does not implement alternate parsing or fallbacks.
+        output = getattr(result, "response")
+        if output is None:
+            # If the response field is unexpectedly None, raise an informative error
+            raise RuntimeError("ollama.generate returned no 'response' field")
+        # Some responses may include leading whitespace; normalize.
+        output_text = str(output).strip()
+        if n == 1:
+            return output_text
+        return [output_text] * n
 
     def get_embedding_model(self, embed_model: Optional[str] = None):
         """Return an OllamaEmbeddings instance.
@@ -224,12 +212,12 @@ class OllamaEmbeddings:
       if needed and supported by your local Ollama version.
     """
 
-    def __init__(self, model: str = "mistral", embed_model: Optional[str] = None, timeout: int = 60):
+    def __init__(self, model: str = "mistral", embed_model: str = "all-minilm", timeout: int = 60):
         """Lightweight embeddings wrapper.
 
         Args:
             model: primary model name (used for reference)
-            embed_model: explicit embedding model name to call with ollama (if different)
+            embed_model: explicit embedding model name to call with ollama (if different). Defaults to `'all-minilm'`.
             timeout: subprocess timeout
         """
         self.model = model
@@ -238,44 +226,14 @@ class OllamaEmbeddings:
         self.embed_model = embed_model or model
 
     def _embed_single(self, text: str):
-        try:
-            import ollama
-        except Exception as e:
-            raise RuntimeError(
-                "The 'ollama' Python package is required for OllamaEmbeddings but is not available. "
-                "Install it with `pip install ollama` or use a different embedding backend (sentence-transformers)."
-            ) from e
-
-        # Call the Python API and expect an object with an `embeddings` property.
-        try:
-            # ollama.embed(model, inputs) typically accepts a list of strings and
-            # returns an object with .embeddings (list of vectors)
-            if not hasattr(ollama, "embed"):
-                raise RuntimeError("Installed 'ollama' package does not expose 'embed' API. Upgrade ollama or use another embedder.")
-
-            result = ollama.embed(self.embed_model, [text])
-
-            # Prefer attribute-style access
-            if hasattr(result, "embeddings"):
-                emb = result.embeddings
-                if isinstance(emb, list) and len(emb) > 0:
-                    return emb[0]
-
-            # Fallback: dict-like structure
-            if isinstance(result, dict):
-                if "embeddings" in result and isinstance(result["embeddings"], list) and result["embeddings"]:
-                    return result["embeddings"][0]
-                if "data" in result and isinstance(result["data"], list) and result["data"]:
-                    first = result["data"][0]
-                    if isinstance(first, dict) and "embedding" in first:
-                        return first["embedding"]
-                    if isinstance(first, list):
-                        return first
-
-            raise RuntimeError("Unable to extract embedding vector from ollama.embed() result. Ensure the embed model returns numeric embeddings via the ollama Python API.")
-
-        except Exception as e:
-            raise RuntimeError("Failed to get embeddings from ollama Python API. Ensure 'ollama' is installed and the specified embed model returns numeric embeddings via the Python API.") from e
+        # Call the chosen embedding API directly and parse the result in one way.
+        # Based on the probe, use `ollama.embed(model, [text])` and expect a
+        # response object with an `.embeddings` attribute containing a list of vectors.
+        result = ollama.embed(self.embed_model, [text])
+        emb = getattr(result, "embeddings")
+        if not emb or not isinstance(emb, list):
+            raise RuntimeError("ollama.embed did not return a list of embeddings")
+        return emb[0]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
