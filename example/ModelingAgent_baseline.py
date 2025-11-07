@@ -85,6 +85,12 @@ class MySimulationAgent(SimulationAgent):
                 self.memory(f'review: {review_text}')
             reviews_user = self.interaction_tool.get_reviews(user_id=self.task['user_id'])
             review_similar = self.memory(f'{reviews_user[0]["text"]}')
+
+            print(user)
+            print(reviews_user)
+            print(business)
+            print(review_similar)
+
             task_description = f'''
             You are a real human user on Yelp, a platform for crowd-sourced business reviews. Here is your Yelp profile and review history: {user}
 
@@ -157,12 +163,29 @@ if __name__ == "__main__":
 
     # Run the simulation
     # If you don't set the number of tasks, the simulator will run all tasks.
-    outputs = simulator.run_simulation(number_of_tasks=10, enable_threading=True, max_workers=10)
+    # outputs = simulator.run_simulation(number_of_tasks=10, enable_threading=True, max_workers=10)
     
     # Evaluate the agent
-    evaluation_results = simulator.evaluate()       
-    with open(f'./evaluation_results_track1_{task_set}.json', 'w') as f:
-        json.dump(evaluation_results, f, indent=4)
+    #evaluation_results = simulator.evaluate()       
+    #with open(f'./evaluation_results_track1_{task_set}.json', 'w') as f:
+    #    json.dump(evaluation_results, f, indent=4)
 
     # Get evaluation history
-    evaluation_history = simulator.get_evaluation_history()
+    # evaluation_history = simulator.get_evaluation_history()
+
+    # --- Interactive example: run and inspect a single task ---
+    # Demonstrates `Simulator.run_single_task` which runs a single task
+    # synchronously and (optionally) logs LLM requests/responses.
+    try:
+        print("Running interactive single-task example (task 0) with LLM logging...")
+        single_res = simulator.run_single_task(task_index=0, wrap_llm_with_logger=True)
+        inspect_res = {
+            "task": single_res.get("task"),
+            "output": single_res.get("output"),
+            "llm_calls": single_res.get("llm_calls")
+        }
+        with open("./single_task_inspect.json", "w") as sf:
+            json.dump(inspect_res, sf, indent=2)
+        print("Wrote ./single_task_inspect.json with task and LLM call details")
+    except Exception as e:
+        print("Interactive single-task example failed:", str(e))
