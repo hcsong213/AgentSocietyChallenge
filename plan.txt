@@ -1,0 +1,25 @@
+- Items:
+  - Reasoning Loop:
+    - Use past user review analysis and past item review analysis to synthesize into logical reasoning steps about 
+    what the review should contain and not contain
+    - Can incorporate some self refinement 
+  - Self Refinement:
+    - Critic will look at initial review draft and make criticisms based on past reviews and analysis of user style
+    - and make adjustments
+  - Past User Review Analysis
+    - Look at past reviews and prompt model to concisely summarize key details about user like review-writing style, 
+    lifestyle preferences (e.g. are they a doctor or student?), their preferred type of item / book / restauraunt / food (task-specific),
+    and other things that seem important (e.g. personality) for an accurate review 
+  - Past Item Review Analysis:
+    - Are there any common issues / benefits of the item that have been consistently reported across past user reviews? 
+    Concisely summarize the item based on these reviews, and also base this on the task type
+
+
+- Initial Agent Workflow:
+  - Get analysis of past user review and past item reviews 
+  - Reason loop to indicate what the review should contain until deemed (done)
+    - Figure out ending condition, maybe use self reflection 
+  - Create initial draft of review
+  - Self refinement critique of initial draft
+  - Final draft 
+  
