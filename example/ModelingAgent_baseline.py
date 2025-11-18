@@ -90,6 +90,7 @@ class MySimulationAgent(SimulationAgent):
             print(reviews_user)
             print(business)
             print(review_similar)
+            
 
             task_description = f'''
             You are a real human user on Yelp, a platform for crowd-sourced business reviews. Here is your Yelp profile and review history: {user}
@@ -148,7 +149,7 @@ class MySimulationAgent(SimulationAgent):
 
 if __name__ == "__main__":
     # Set the data
-    task_set = "amazon" # "goodreads" or "yelp"
+    task_set = "yelp" # "goodreads" or "yelp"
     simulator = Simulator(data_dir="dataset", device="gpu", cache=True)
     
     import os
@@ -161,31 +162,25 @@ if __name__ == "__main__":
     simulator.set_agent(MySimulationAgent)
     simulator.set_llm(OllamaLLM(model="mistral"))  # replace "llama2" with your local model name
 
-    # Run the simulation
-    # If you don't set the number of tasks, the simulator will run all tasks.
-    # outputs = simulator.run_simulation(number_of_tasks=10, enable_threading=True, max_workers=10)
-    
-    # Evaluate the agent
-    #evaluation_results = simulator.evaluate()       
-    #with open(f'./evaluation_results_track1_{task_set}.json', 'w') as f:
-    #    json.dump(evaluation_results, f, indent=4)
-
-    # Get evaluation history
-    # evaluation_history = simulator.get_evaluation_history()
-
-    # --- Interactive example: run and inspect a single task ---
-    # Demonstrates `Simulator.run_single_task` which runs a single task
-    # synchronously and (optionally) logs LLM requests/responses.
-    try:
-        print("Running interactive single-task example (task 0) with LLM logging...")
-        single_res = simulator.run_single_task(task_index=0, wrap_llm_with_logger=True)
-        inspect_res = {
-            "task": single_res.get("task"),
-            "output": single_res.get("output"),
-            "llm_calls": single_res.get("llm_calls")
+    if False:
+        print("Running reasoning loop agent for task 0...")
+        res = simulator.run_single_task(task_index=0, wrap_llm_with_logger=True)
+        
+        # Prepare structured log data including the LLM calls so the formatter can consume it
+        output_data = {
+            "output": res.get("output"),
+            "llm_calls": res.get("llm_calls", [])
         }
-        with open("./single_task_inspect.json", "w") as sf:
-            json.dump(inspect_res, sf, indent=2)
-        print("Wrote ./single_task_inspect.json with task and LLM call details")
-    except Exception as e:
-        print("Interactive single-task example failed:", str(e))
+
+        # Print a short summary to stdout
+        print(json.dumps({"output_present": bool(output_data["output"]), "llm_call_count": len(output_data["llm_calls"])}, indent=2))
+
+    else:
+        # Run the simulation
+        # If you don't set the number of tasks, the simulator will run all tasks.
+        outputs = simulator.run_simulation(number_of_tasks=20, enable_threading=True, max_workers=10)
+        
+        # Evaluate the agent
+        evaluation_results = simulator.evaluate()       
+        with open(f'./evaluation_results_track1_{task_set}.json', 'w') as f:
+            json.dump(evaluation_results, f, indent=4)

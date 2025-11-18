@@ -19,6 +19,7 @@ from typing import Dict, Any, List
 from websocietysimulator import Simulator
 from websocietysimulator.agent import SimulationAgent
 from websocietysimulator.llm import OllamaLLM, LLMBase
+import format_llm_logs
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("reasoning_loop_agent")
@@ -319,26 +320,56 @@ NOW PROVIDE YOUR REASONING STEP (output 3 lines: Thought, Insight, Action):
             f"- {ins.get('insight', '')}" for ins in reasoning_insights
         ])
         
+        # Get sample past user reviews for style reference
+        user_id = self.task.get("user_id")
+        user_reviews = self.interaction_tool.get_reviews(user_id=user_id) or []
+        user_review_samples = self._format_review_samples(user_reviews, max_samples=3)
+        
         prompt = f"""Generate a review based on the following reasoning insights.
 
-REASONING INSIGHTS (instructions for you):
+PAST USER REVIEW EXAMPLES (study these carefully for authentic style):
+{user_review_samples}
+
+REASONING INSIGHTS (what to say - the content/message):
 {insights_summary}
 
-USER ANALYSIS:
+USER ANALYSIS (additional patterns):
 {user_analysis}
 
-ITEM ANALYSIS:
+ITEM ANALYSIS (background context):
 {item_analysis}
 
-Your task: Write the actual review following the insights above.
-- Match the predicted rating
-- Cover the key topics mentioned in insights
-- Use the tone and style specified in insights
-- Keep length as suggested in insights (typically 2-4 sentences)
+CRITICAL INSTRUCTIONS - You must balance TWO requirements:
+
+1. STYLE MIMICRY (HOW to write):
+   - Study the example reviews above and MIMIC their exact writing style
+   - Copy their vocabulary level, sentence structure, and phrasing patterns
+   - Match their formality level (casual vs formal)
+   - Use similar punctuation patterns (exclamation marks, ellipses, etc.)
+   - Match their typical review length (count words in examples)
+   - Adopt their grammar patterns (fragments, run-ons, perfect grammar, etc.)
+   - Mirror their emotional expression style (enthusiastic, reserved, dramatic, etc.)
+   - If they use specific phrases or expressions, incorporate similar ones
+
+2. CONTENT GUIDANCE (WHAT to say):
+   - Follow the rating prediction from the reasoning insights
+   - Include the key topics/aspects mentioned in the insights
+   - Express the sentiment and opinions indicated by the insights
+   - Cover the points the insights say to emphasize or avoid
+
+THINK OF IT THIS WAY:
+- The EXAMPLES show you the user's authentic "voice" and writing patterns → copy this style
+- The INSIGHTS tell you the message/content this specific review should convey → use these facts
+- Your job: deliver the insights' message while sounding EXACTLY like the user in the examples
+
+⚠️ COMMON MISTAKE TO AVOID:
+Do NOT write in a generic, polished, or formal style if the examples are casual/spontaneous.
+Do NOT use vocabulary or sentence structures that don't appear in the examples.
+If the examples are brief and casual, your output should be too - even if the insights mention many topics, weave them into the user's natural style.
 
 Output format:
 stars: [1.0|2.0|3.0|4.0|5.0]
-review: [your review text]
+review: [your review text - written in the USER'S style from examples, containing the message from insights]
 """
         
         messages = [{"role": "user", "content": prompt}]
@@ -392,15 +423,11 @@ Expand it slightly to be more complete while maintaining the same rating and ton
             
             # Final fallback
             if not review:
-                review = text.strip()[:2048]
-            
-            # Trim if too long
-            if len(review) > 2048:
-                review = review[:2048]
+                review = text.strip()
         
         except Exception as e:
             logger.warning(f"Parse error: {e}")
-            review = text[:2048] if text else ""
+            review = text if text else ""
         
         return {"stars": stars, "review": review}
 
@@ -426,37 +453,68 @@ Expand it slightly to be more complete while maintaining the same rating and ton
         
         return sampled[:max_samples]
 
+    def _format_review_samples(self, reviews: List[Dict], max_samples: int = 3) -> str:
+        """Format sample user reviews for style reference in prompts."""
+        if not reviews:
+            return "No past reviews available."
+        
+        sampled = self._sample_diverse_reviews(reviews, max_samples=max_samples)
+        formatted = []
+        for i, review in enumerate(sampled, 1):
+            stars = review.get("stars", "N/A")
+            text = review.get("text", "")[:700]  # Limit length
+            formatted.append(f"Example {i}:\nRating: {stars} stars\nReview: {text}")
+        
+        return "\n\n".join(formatted)
+
 
 if __name__ == "__main__":
     # Demo run
     sim = Simulator(data_dir="dataset", device="gpu", cache=True)
     import os
     here = os.path.dirname(__file__)
-    task_dir = os.path.join(here, "track1", "amazon", "tasks")
-    groundtruth_dir = os.path.join(here, "track1", "amazon", "groundtruth")
+    task_set = "yelp" # "goodreads" or "yelp"
+    task_dir = os.path.join("example", "track1", task_set, "tasks")
+    groundtruth_dir = os.path.join("example", "track1", task_set, "groundtruth")
     sim.set_task_and_groundtruth(task_dir=task_dir, groundtruth_dir=groundtruth_dir)
 
-    llm = OllamaLLM(model="mistral")
+    llm = OllamaLLM(model="llama3.1:8b")
     sim.set_agent(ReasoningLoopAgent)
     sim.set_llm(llm)
 
-    print("Running reasoning loop agent for task 0...")
-    res = sim.run_single_task(task_index=0, wrap_llm_with_logger=True)
-    
-    output_data = {
-        "output": res.get("output"),
-        "llm_call_count": len(res.get("llm_calls", []))
-    }
 
-    
-    print(json.dumps(output_data, indent=2))
-    
+    if False:
+        print("Running reasoning loop agent for task 0...")
+        res = sim.run_single_task(task_index=0, wrap_llm_with_logger=True)
+        
+        # Prepare structured log data including the LLM calls so the formatter can consume it
+        output_data = {
+            "output": res.get("output"),
+            "llm_calls": res.get("llm_calls", [])
+        }
 
-    # Save just the output and LLM calls.
-    output_data = {
-        "output": res.get("output"),
-        "llm_call_count": len(res.get("llm_calls", []))
-    }
-    with open("reasoning_loop_output.json", "w") as f:
-        json.dump(output_data, f, indent=2)
-    print("Saved detailed logs to reasoning_loop_run.json")
+        # Print a short summary to stdout
+        print(json.dumps({"output_present": bool(output_data["output"]), "llm_call_count": len(output_data["llm_calls"])}, indent=2))
+
+        # Save JSON log
+        log_json_path = os.path.join(here, "reasoning_loop_output.json")
+        with open(log_json_path, "w", encoding="utf-8") as f:
+            json.dump(output_data, f, indent=2, ensure_ascii=False)
+        print(f"Saved detailed logs to {log_json_path}")
+
+        # Also create a human-readable formatted text file using format_llm_logs.py
+        formatted_txt_path = os.path.join(here, "reasoning_loop_output.txt")
+        try:
+            format_llm_logs.format_llm_logs(log_json_path, formatted_txt_path)
+            print(f"Saved formatted LLM logs to {formatted_txt_path}")
+        except Exception as e:
+            logger.exception("Failed to format LLM logs: %s", e)
+    else:
+        outputs = sim.run_simulation(number_of_tasks=10, enable_threading=True, max_workers=10)
+        evaluation_results = sim.evaluate()
+        evaluation_results_path = os.path.join(here, f'evaluation_results_track1_{task_set}.json')
+        with open(evaluation_results_path, 'w') as f:
+            json.dump(evaluation_results, f, indent=4)
+
+        print(f"The evaluation_results is :{evaluation_results}")
+
