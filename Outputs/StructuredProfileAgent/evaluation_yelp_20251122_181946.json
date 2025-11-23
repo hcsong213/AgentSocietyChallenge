@@ -1,0 +1,19 @@
+{
+    "type": "simulation",
+    "metrics": {
+        "preference_estimation": 0.869,
+        "review_generation": 0.7953556438011284,
+        "overall_quality": 0.8321778219005642
+    },
+    "data_info": {
+        "evaluated_count": 20,
+        "original_simulation_count": 20,
+        "original_ground_truth_count": 400
+    },
+    "metadata": {
+        "agent_name": "StructuredProfileAgent",
+        "task_set": "yelp",
+        "number_of_tasks": 20,
+        "timestamp": "20251122_181946"
+    }
+}

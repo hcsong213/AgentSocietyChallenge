@@ -1,0 +1,19 @@
+{
+    "type": "simulation",
+    "metrics": {
+        "preference_estimation": 0.79,
+        "review_generation": 0.8734987200318803,
+        "overall_quality": 0.8317493600159402
+    },
+    "data_info": {
+        "evaluated_count": 10,
+        "original_simulation_count": 10,
+        "original_ground_truth_count": 400
+    },
+    "metadata": {
+        "agent_name": "BaselineAgent",
+        "task_set": "yelp",
+        "number_of_tasks": 10,
+        "timestamp": "20251122_175123"
+    }
+}

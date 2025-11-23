@@ -3,14 +3,11 @@ from __future__ import annotations
 import json
 import re
 import logging
-import os
 from typing import Dict, Any, List
 
 from websocietysimulator import Simulator
 from websocietysimulator.agent import SimulationAgent
-from websocietysimulator.llm import OllamaLLM, LLMBase
-from websocietysimulator.agent.modules.memory_modules import MemoryDILU
-from Util import format_llm_logs
+from websocietysimulator.llm import LLMBase
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("reasoning_loop_agent")
@@ -20,7 +17,6 @@ class ReasoningLoopAgent(SimulationAgent):
     def __init__(self, llm: LLMBase, max_reasoning_steps: int = 4):
         super().__init__(llm=llm)
         self.max_reasoning_steps = max_reasoning_steps
-        self.memory = MemoryDILU(llm=llm)
 
     def workflow(self) -> Dict[str, Any]:
         try:
@@ -295,27 +291,12 @@ NOW PROVIDE YOUR REASONING STEP (output 3 lines: Thought, Insight, Action):
         item_id = self.task.get("item_id")
         item_info = self.interaction_tool.get_item(item_id=item_id)
         item_details = json.dumps(item_info, ensure_ascii=False)[:500]
-        
-        # Use memory-based similarity search like baseline to find most relevant item review
-        item_reviews = self.interaction_tool.get_reviews(item_id=item_id) or []
-        for review in item_reviews:
-            review_text = review.get('text', '')
-            if review_text:
-                self.memory(f'review: {review_text}')
-        
-        similar_item_review = ""
-        if user_reviews and self.memory.scenario_memory._collection.count() > 0:
-            # Find item review most similar to user's style
-            similar_item_review = self.memory(f'{user_reviews[0]["text"]}')
-            logger.info(f"Found similar item review (length: {len(similar_item_review)} chars)")
+
  
         prompt = f"""Generate a review based on the following reasoning insights.
 
 PAST USER REVIEW EXAMPLES (study these carefully for authentic style):
 {user_review_samples}
-
-SIMILAR ITEM REVIEW (reference for semantic/emotional alignment):
-{similar_item_review if similar_item_review else "No similar review found."}
 
 REASONING INSIGHTS (what to say - the content/message):
 {insights_summary}
@@ -389,12 +370,6 @@ review: [your review text - written in the USER'S style from examples, containin
         user_review_samples = self._format_review_samples(user_reviews, max_samples=3)
         item_review_samples = self._format_review_samples(item_reviews, max_samples=3)
         
-        # Get the similar item review from memory for additional context
-        similar_item_review = ""
-        if user_reviews and self.memory.scenario_memory._collection.count() > 0:
-            similar_item_review = self.memory(f'{user_reviews[0]["text"]}')
-        
-        item_name = item_info.get("name", "this business")
         item_details = json.dumps(item_info, ensure_ascii=False)[:400]
         
         prompt = f"""You are refining a generated review to ensure it meets quality standards.
@@ -409,14 +384,11 @@ USER'S PAST REVIEW EXAMPLES (for style/tone reference):
 ITEM'S PAST REVIEW EXAMPLES (for topic/vocabulary reference):
 {item_review_samples}
 
-MOST SIMILAR ITEM REVIEW (semantic/emotional reference):
-{similar_item_review if similar_item_review else "No similar review available."}
-
 BUSINESS DETAILS:
 {item_details}
 
 USER ANALYSIS SUMMARY:
-{user_analysis[:300]}
+{user_analysis}
 
 YOUR TASK: Analyze and refine the generated review to ensure:
 
@@ -569,59 +541,3 @@ Refined Review: {review_text}
             formatted.append(f"Example {i}:\nRating: {stars} stars\nReview: {text}")
         
         return "\n\n".join(formatted)
-
-
-if __name__ == "__main__":
-    from Util import format_llm_logs
-    import os
-
-
-    print(os.pardir)
-    sim = Simulator(data_dir="dataset", device="gpu", cache=True)
-    here = os.path.dirname(__file__)
-
-    task_set = "yelp" # "goodreads" or "yelp"
-    task_dir = os.path.join("example", "track1", task_set, "tasks")
-    groundtruth_dir = os.path.join("example", "track1", task_set, "groundtruth")
-    sim.set_task_and_groundtruth(task_dir=task_dir, groundtruth_dir=groundtruth_dir)
-
-    llm = OllamaLLM(model="mistral")
-    sim.set_agent(ReasoningLoopAgent)
-    sim.set_llm(llm)
-
-
-    # Set to True for single tasked debugging
-    if True:
-        print("Running reasoning loop agent for task 0...")
-        res = sim.run_single_task(task_index=0, wrap_llm_with_logger=True)
-        
-        # Prepare structured log data including the LLM calls so the formatter can consume it
-        output_data = {
-            "output": res.get("output"),
-            "llm_calls": res.get("llm_calls", [])
-        }
-
-        # Print a short summary to stdout
-        print(json.dumps({"output_present": bool(output_data["output"]), "llm_call_count": len(output_data["llm_calls"])}, indent=2))
-
-        # Save JSON log
-        log_json_path = f'./Outputs/reasoning_loop_output.json' 
-        with open(log_json_path, "w", encoding="utf-8") as f:
-            json.dump(output_data, f, indent=2, ensure_ascii=False)
-        print(f"Saved detailed logs to {log_json_path}")
-
-        # Also create a human-readable formatted text file using format_llm_logs.py
-        formatted_txt_path = f'./Outputs/reasoning_loop_output.txt'
-        try:
-            format_llm_logs(log_json_path, formatted_txt_path)
-            print(f"Saved formatted LLM logs to {formatted_txt_path}")
-        except Exception as e:
-            logger.exception("Failed to format LLM logs: %s", e)
-    else:
-        outputs = sim.run_simulation(number_of_tasks=80)
-        evaluation_results = sim.evaluate()
-        with open(f'./Outputs/evaluation_results_track1_{task_set}.json', 'w') as f:
-            json.dump(evaluation_results, f, indent=4)
-
-        print(f"The evaluation_results is :{evaluation_results}")
-

@@ -1,0 +1,736 @@
+TOTAL LLM CALLS: 10
+
+====================================================================================================
+LLM CALL #1
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+[USER]
+Analyze this user's review patterns and create a STRUCTURED PROFILE.
+
+User's review samples (1 reviews):
+Rating: 1.0 stars
+Review: Terrible customer service. The technicians cannot solve problems, and the billing department
+is rude and unresponsive.  Don't ask to talk to supervisor because they don't want to transfer you.
+Don't complain about getting calls that are dial toned because they can't deal with it. They expect
+that going on the Do Not Call list will work. Disgusting And expensive.
+
+Additional user info:
+{"user_id": "dWgnBvdmIvLtk6Ciw9xCEg", "name": "Matt", "review_count": 5, "yelping_since":
+"2017-09-09 19:59:05", "useful": 1, "funny": 0, "cool": 0, "elite": "", "friends": "None", "fans":
+0, "average_stars": 3.4, "compliment_hot": 0, "compliment_more": 0, "compliment_profile": 0,
+"compliment_cute": 0, "compliment_list": 0, "compliment_note": 0, "compliment_plain": 0,
+"compliment_cool": 0, "compliment_funny": 0, "compliment_writer": 0, "compliment_photos": 0,
+"source": "yelp"}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{
+  "user_name": "[user's name if available in profile, otherwise 'Unknown']",
+  "writing_tone": "[casual/formal/sarcastic/enthusiastic/balanced/etc.]",
+  "writing_tone_details": "[2-3 sentence description of their voice and style]",
+  "sentiment_tendency": "[positive/neutral/negative/mixed]",
+  "sentiment_details": "[how generous or harsh they are with ratings]",
+  "vocabulary_patterns": ["list", "of", "characteristic", "words", "and", "phrases", "they", "use"],
+  "intensity_markers": ["words that amplify emotion:
+  amazing/terrible/extremely/very/somewhat/okay/etc."],
+  "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
+  "grammar_style": "[complete sentences/fragments/run-ons/mix]",
+  "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+  "focus_aspects": {
+    "restaurants": ["service", "food quality", "ambiance", "etc."],
+    "general": ["what they typically comment on"]
+  },
+  "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
+  "typical_length_words": [average word count],
+  "rating_patterns": {
+    "average": [average star rating],
+    "tendency": "[harsh/generous/moderate]",
+    "distribution": "[mostly 5s and 1s / balanced / etc.]"
+  },
+  "personality_traits": ["descriptors of their personality in reviews"],
+  "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
+}
+
+Provide ONLY the JSON object, no additional text.
+
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+
+
+
+====================================================================================================
+LLM CALL #2
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+{
+  "user_name": "Matt",
+  "writing_tone": "Negative",
+  "writing_tone_details": "Critical and direct, with a strong emphasis on customer service issues
+  and negative experiences.",
+  "sentiment_tendency": "Negative",
+  "sentiment_details": "Tends to give low ratings and expresses harsh opinions about poor
+  services.",
+  "vocabulary_patterns": ["terrible", "customer service", "problems", "rude", "unresponsive",
+  "expensive"],
+  "intensity_markers": ["disgusting", "expensive"],
+  "sentiment_intensity": "Extreme",
+  "grammar_style": "Complete sentences",
+  "punctuation_style": "Heavy exclamations",
+  "focus_aspects": {
+    "restaurants": ["customer service", "technicians", "billing department"],
+    "general": ["problems", "rude behavior"]
+  },
+  "typical_length": "Long",
+  "typical_length_words": [100],
+  "rating_patterns": {
+    "average": 1.0,
+    "tendency": "Harsh",
+    "distribution": "Mostly 1s"
+  },
+  "personality_traits": ["critical", "displeased"],
+  "emotional_expression": "Dramatic"
+}
+
+
+====================================================================================================
+LLM CALL #3
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+[USER]
+Analyze existing reviews for this item/business and create a STRUCTURED ASPECT PROFILE.
+
+NOTE: The 'item' can be either a physical product OR a service/business (restaurant, hotel, etc.).
+
+Item details:
+{"item_id": "RROICJV1SdNKeua8QOSfhA", "name": "Katona James A Sr Roofing", "address": "4384 Manayunk
+Ave", "city": "Philadelphia", "state": "PA", "postal_code": "19128", "latitude": 40.0297438,
+"longitude": -75.2190878, "stars": 2.0, "review_count": 5, "is_open": 1, "attributes": null,
+"categories": "Home Services, Roofing", "hours": null, "source": "yelp", "type": "business"}
+
+Item reviews (5 reviews):
+Rating: 1.0 stars
+Review: Mr.Katona is currently in legal proceedings because of the damage he is caused at our home.
+
+As the other reviewers reported, he tells you one price, accepts a down payment, then increases the
+price by 40% the day he begins work.
+
+Refused to put anything in writing, and was barely responsive even during our law suit. 
+
+I don't believe anyone should be forced to go through a nightmare like this company.
+
+Rating: 1.0 stars
+Review: These two guys showed up to look at the roof of the house next door. One older and one
+younger. Then the younger guy started taking pictures of my house. I banged on the window and the
+guy turned Abit like he was trying to take pictures of the house where they were supposed to be.
+Like I hadn't literally just seen him take a picture, look at it, step closer and take another, then
+rotate the phone and take another picture. Inappropriate and unacceptable. You are welcome to the
+address you were called to and that's all.
+
+Rating: 1.0 stars
+Review: Jim repaired our leaking roof, and guaranteed his work for three years. After two years, we
+had the same leak. We called Jim and he was extremely rude to me and my husband, and said he would
+not fix our roof and could no longer guarantee his work from before. We also found Jim to be
+unprofessional, sometimes taking weeks to return our phone calls, and promising to come look at our
+roof and never showing up.
+
+Rating: 1.0 stars
+Review: Jim does not like to write anything down. He makes an estimate for a job verbally, and then
+once he's halfway into the work, he calls day after day saying more and more needs doing. The cost
+of some roof repairs this past summer went up by much more than his estimate. I believe he lowballs
+to get the work, and then ratchets the price up.
+
+The work resulted a downspout that shot water like a fire hose right at one of our windows, causing
+water intrusion and damage.
+
+Jim has refused 4 requests over a period of several months to send the invoice showing the work that
+was done and paid for, the warranty, and the materials used. At first it was because his "office
+girl" was out sick. Now he just flat out ignores the requests.
+
+He asked for advances on payment several times because of "cash flow problems."  This was a red
+flag, but by that time we were already in too deep with him.
+
+I cannot recommend this business whatsoever.
+
+Rating: 5.0 stars
+Review: Jim was able to stop by the day I called (on a Sunday evening, no less) to assess a leak in
+our kitchen ceiling.  He was out the next day to repair and quickly resolved the matter.  He
+answered all our questions and was very helpful all around.  Hopefully this is the last of our roof
+issues for some time, but if not I'll be keeping Jim's card handy!
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{
+  "item_name": "[name of the item/business from the item details]",
+  "item_type": "[product/restaurant/hotel/book/service/etc.]",
+  "common_themes": ["list", "of", "aspects", "people", "discuss"],
+  "theme_details": {
+    "theme1": "what people say about this theme",
+    "theme2": "what people say about this theme"
+  },
+  "sentiment_distribution": {
+    "overall_sentiment": "[positive/negative/mixed]",
+    "average_rating": [average],
+    "rating_breakdown": "description of rating distribution"
+  },
+  "pros": ["specific", "positive", "aspects", "with", "exact", "vocabulary"],
+  "cons": ["specific", "negative", "aspects", "with", "exact", "vocabulary"],
+  "polarizing_aspects": ["things some love and others hate"],
+  "common_vocabulary": ["words", "and", "phrases", "that", "appear", "frequently"],
+  "emotional_tone": "[enthusiastic/disappointed/balanced/etc.]",
+  "specific_mentions": ["concrete items/features people name"]
+}
+
+Provide ONLY the JSON object, no additional text.
+
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+
+
+
+====================================================================================================
+LLM CALL #4
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+{
+  "item_name": "Katona James A Sr Roofing",
+  "item_type": "Service",
+  "common_themes": ["price", "quality of work", "communication", "professionalism"],
+  "theme_details": {
+    "theme1": "Customers complain about hidden costs and price increases.",
+    "theme2": "Customers report poor quality of work, leaks and damage."
+  },
+  "sentiment_distribution": {
+    "overall_sentiment": "negative",
+    "average_rating": 1.0,
+    "rating_breakdown": "All reviews are 1 star or below."
+  },
+  "pros": [],
+  "cons": ["unclear pricing", "poor quality of work", "unprofessional behavior"],
+  "polarizing_aspects": ["Jim's communication and professionalism"],
+  "common_vocabulary": ["damage", "increase", "down payment", "leaks", "rude"],
+  "emotional_tone": "disappointed",
+  "specific_mentions": ["legal proceedings", "fire hose-like downspout"]
+}
+
+
+====================================================================================================
+LLM CALL #5
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+[USER]
+You are planning a review by analyzing user-item alignment.
+
+USER PROFILE:
+{
+  "user_name": "Matt",
+  "writing_tone": "Negative",
+  "writing_tone_details": "Critical and direct, with a strong emphasis on customer service issues
+  and negative experiences.",
+  "sentiment_tendency": "Negative",
+  "sentiment_details": "Tends to give low ratings and expresses harsh opinions about poor
+  services.",
+  "vocabulary_patterns": ["terrible", "customer service", "problems", "rude", "unresponsive",
+  "expensive"],
+  "intensity_markers": ["disgusting", "expensive"],
+  "sentiment_intensity": "Extreme",
+  "grammar_style": "Complete sentences",
+  "punctuation_style": "Heavy exclamations",
+  "focus_aspects": {
+    "restaurants": ["customer service", "technicians", "billing department"],
+    "general": ["problems", "rude behavior"]
+  },
+  "typical_length": "Long",
+  "typical_length_words": [100],
+  "rating_patterns": {
+    "average": 1.0,
+    "tendency": "Harsh",
+    "distribution": "Mostly 1s"
+  },
+  "personality_traits": ["critical", "displeased"],
+  "emotional_expression": "Dramatic"
+}
+
+ITEM PROFILE:
+{
+  "item_name": "Katona James A Sr Roofing",
+  "item_type": "Service",
+  "common_themes": ["price", "quality of work", "communication", "professionalism"],
+  "theme_details": {
+    "theme1": "Customers complain about hidden costs and price increases.",
+    "theme2": "Customers report poor quality of work, leaks and damage."
+  },
+  "sentiment_distribution": {
+    "overall_sentiment": "negative",
+    "average_rating": 1.0,
+    "rating_breakdown": "All reviews are 1 star or below."
+  },
+  "pros": [],
+  "cons": ["unclear pricing", "poor quality of work", "unprofessional behavior"],
+  "polarizing_aspects": ["Jim's communication and professionalism"],
+  "common_vocabulary": ["damage", "increase", "down payment", "leaks", "rude"],
+  "emotional_tone": "disappointed",
+  "specific_mentions": ["legal proceedings", "fire hose-like downspout"]
+}
+
+Your task: Perform CROSS-REASONING to determine how THIS USER would review THIS ITEM.
+
+Analyze the following aspects explicitly:
+
+1. ASPECT PRIORITY MATCHING:
+   - Which item aspects does the user care most about?
+   - Which mentioned pros/cons align with user's typical focus areas?
+   - What would this user notice first about this item?
+
+2. SENTIMENT PREDICTION:
+   - Based on user's rating tendency and item's qualities, what rating would they give?
+   - Would they focus on positives, negatives, or balance?
+   - What emotional tone would they use?
+
+3. TOPIC SELECTION:
+   - Which 2-4 specific aspects should the review mention?
+   - What concrete details from item profile should be referenced?
+   - What vocabulary from item reviews should be echoed?
+
+4. STYLE MATCHING:
+   - How would the user express their opinion (tone, formality, emotion)?
+   - What sentence structure and length should be used?
+   - What punctuation and grammar patterns to apply?
+
+OUTPUT SCHEMA:
+{
+  "predicted_rating": [1.0-5.0],
+  "rating_justification": "why this rating",
+  "key_aspects_to_mention": ["aspect1", "aspect2", "aspect3"],
+  "aspect_sentiments": {
+    "aspect1": "[positive/negative/neutral] - why",
+    "aspect2": "[positive/negative/neutral] - why"
+  },
+  "specific_vocabulary_to_use": ["word1", "phrase2", "term3"],
+  "intensity_words_to_use": ["specific intensity markers matching user's style:
+  amazing/great/okay/terrible/etc."],
+  "concrete_details_to_include": ["specific menu item", "specific service detail", "etc."],
+  "emotional_angle": "how user would feel about this experience",
+  "sentiment_strength": "[how strongly to express the sentiment: very positive/moderately
+  positive/slightly positive/etc.]",
+  "style_directives": {
+    "tone": "[casual/formal/etc.]",
+    "length": "[X sentences or Y words]",
+    "punctuation": "[heavy/minimal/etc.]",
+    "structure": "[fragments/complete sentences/etc.]"
+  }
+}
+
+Provide ONLY the JSON object with your alignment analysis.
+
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+
+
+
+====================================================================================================
+LLM CALL #6
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+{
+  "predicted_rating": [1.0],
+  "rating_justification": "The user's negative sentiment tendency and focus on customer service
+  issues align with Katona James A Sr Roofing's poor communication and quality of work.",
+  "key_aspects_to_mention": ["quality of work", "communication"],
+  "aspect_sentiments": {
+    "quality of work": "negative - The quality of the work performed by Katona James A Sr Roofing
+    was terrible and led to leaks and damage.",
+    "communication": "negative - Communication with this service provider was unclear, leading to
+    hidden costs and price increases."
+  },
+  "specific_vocabulary_to_use": ["terrible", "unclear", "hidden costs"],
+  "intensity_words_to_use": ["terrible"],
+  "concrete_details_to_include": ["poor quality of work", "leaks", "unclear pricing"],
+  "emotional_angle": "Dramatic and critical",
+  "sentiment_strength": "Extreme",
+  "style_directives": {
+    "tone": "Critical and direct",
+    "length": "Long",
+    "punctuation": "Heavy exclamations",
+    "structure": "Complete sentences"
+  }
+}
+
+
+====================================================================================================
+LLM CALL #7
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+[USER]
+Generate a review following this alignment plan.
+
+        ALIGNMENT PLAN (instructions for what to write):
+        {
+  "predicted_rating": [1.0],
+  "rating_justification": "The user's negative sentiment tendency and focus on customer service
+  issues align with Katona James A Sr Roofing's poor communication and quality of work.",
+  "key_aspects_to_mention": ["quality of work", "communication"],
+  "aspect_sentiments": {
+    "quality of work": "negative - The quality of the work performed by Katona James A Sr Roofing
+    was terrible and led to leaks and damage.",
+    "communication": "negative - Communication with this service provider was unclear, leading to
+    hidden costs and price increases."
+  },
+  "specific_vocabulary_to_use": ["terrible", "unclear", "hidden costs"],
+  "intensity_words_to_use": ["terrible"],
+  "concrete_details_to_include": ["poor quality of work", "leaks", "unclear pricing"],
+  "emotional_angle": "Dramatic and critical",
+  "sentiment_strength": "Extreme",
+  "style_directives": {
+    "tone": "Critical and direct",
+    "length": "Long",
+    "punctuation": "Heavy exclamations",
+    "structure": "Complete sentences"
+  }
+}
+
+        USER PROFILE (how to write it):
+        {
+  "user_name": "Matt",
+  "writing_tone": "Negative",
+  "writing_tone_details": "Critical and direct, with a strong emphasis on customer service issues
+  and negative experiences.",
+  "sentiment_tendency": "Negative",
+  "sentiment_details": "Tends to give low ratings and expresses harsh opinions about poor
+  services.",
+  "vocabulary_patterns": ["terrible", "customer service", "problems", "rude", "unresponsive",
+  "expensive"],
+  "intensity_markers": ["disgusting", "expensive"],
+  "sentiment_intensity": "Extreme",
+  "grammar_style": "Complete sentences",
+  "punctuation_style": "Heavy exclamations",
+  "focus_aspects": {
+    "restaurants": ["customer service", "technicians", "billing department"],
+    "general": ["problems", "rude behavior"]
+  },
+  "typical_length": "Long",
+  "typical_length_words": [100],
+  "rating_patterns": {
+    "average": 1.0,
+    "tendency": "Harsh",
+    "distribution": "Mostly 1s"
+  },
+  "personality_traits": ["critical", "displeased"],
+  "emotional_expression": "Dramatic"
+}
+
+        ITEM PROFILE (context about the item):
+        {
+  "item_name": "Katona James A Sr Roofing",
+  "item_type": "Service",
+  "common_themes": ["price", "quality of work", "communication", "professionalism"],
+  "theme_details": {
+    "theme1": "Customers complain about hidden costs and price increases.",
+    "theme2": "Customers report poor quality of work, leaks and damage."
+  },
+  "sentiment_distribution": {
+    "overall_sentiment": "negative",
+    "average_rating": 1.0,
+    "rating_breakdown": "All reviews are 1 star or below."
+  },
+  "pros": [],
+  "cons": ["unclear pricing", "poor quality of work", "unprofessional behavior"],
+  "polarizing_aspects": ["Jim's communication and professionalism"],
+  "common_vocabulary": ["damage", "increase", "down payment", "leaks", "rude"],
+  "emotional_tone": "disappointed",
+  "specific_mentions": ["legal proceedings", "fire hose-like downspout"]
+}
+
+        USER'S PAST REVIEW EXAMPLES (study for authentic voice):
+        Example 1:
+Rating: 1.0 stars
+Review: Terrible customer service. The technicians cannot solve problems, and the billing department
+is rude and unresponsive.  Don't ask to talk to supervisor because they don't want to transfer you.
+Don't complain about getting calls that are dial toned because they can't deal with it. They expect
+that going on the Do Not Call list will work. Disgusting And expensive.
+
+
+        CRITICAL INSTRUCTIONS:
+
+        1. FOLLOW THE ALIGNMENT PLAN:
+        - Use the predicted rating
+        - Mention the key aspects specified
+        - Use the specific vocabulary and concrete details listed
+        - Use the intensity markers specified (amazing/terrible/okay/etc.)
+        - Match the sentiment strength indicated (very positive vs moderately positive)
+        - Apply the emotional angle described
+        - Follow all style directives (tone, length, punctuation, structure)
+
+        2. MIMIC THE USER'S AUTHENTIC VOICE:
+        - Study the example reviews carefully
+        - Copy their exact vocabulary level and sentence patterns
+        - CRITICAL: Match their intensity markers (if they say "amazing" don't say "good", if they
+        say "okay" don't say "great")
+        - Match the strength of their sentiment expression (extreme vs moderate language)
+        - Match their grammar style (fragments vs. complete sentences)
+        - Use their punctuation patterns (exclamations, ellipses, etc.)
+        - Mirror their emotional expression style
+        - Match their typical review length (count words/sentences in examples)
+        - KEEP IT CONCISE: Most reviews are 2-5 sentences, not paragraphs
+
+        3. ENSURE SEMANTIC/TOPIC ALIGNMENT:
+        - Include the concrete details from the alignment plan
+        - Use vocabulary that appears in the item profile
+        - Echo phrases from the similar item review when appropriate
+        - Be specific about this business, not generic
+
+        Think of it as: The ALIGNMENT PLAN tells you WHAT to say, the USER PROFILE tells you HOW to
+        say it, and the EXAMPLES show you the user's authentic voice to copy.
+
+        Output format:
+        stars: [1.0|2.0|3.0|4.0|5.0]
+        review: [your review text in the user's voice]
+        
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+
+
+
+====================================================================================================
+LLM CALL #8
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+stars: 1.0
+review: Terrible! Katona James A Sr Roofing's poor quality of work led to leaks and damage, and
+their unclear pricing resulted in hidden costs and price increases!! I was left feeling disappointed
+and outraged. Their communication was unprofessional and unresponsive, leaving me frustrated and
+displeased. Avoid this service provider at all costs!!!
+
+
+====================================================================================================
+LLM CALL #9
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+[USER]
+Perform SELF-CRITIQUE on this generated review and refine if needed.
+
+GENERATED REVIEW:
+Rating: 1.0 stars
+Review: "Terrible! Katona James A Sr Roofing's poor quality of work led to leaks and damage, and
+their unclear pricing resulted in hidden costs and price increases!! I was left feeling disappointed
+and outraged. Their communication was unprofessional and unresponsive, leaving me frustrated and
+displeased. Avoid this service provider at all costs!!!"
+
+USER PROFILE:
+{
+  "user_name": "Matt",
+  "writing_tone": "Negative",
+  "writing_tone_details": "Critical and direct, with a strong emphasis on customer service issues
+  and negative experiences.",
+  "sentiment_tendency": "Negative",
+  "sentiment_details": "Tends to give low ratings and expresses harsh opinions about poor
+  services.",
+  "vocabulary_patterns": ["terrible", "customer service", "problems", "rude", "unresponsive",
+  "expensive"],
+  "intensity_markers": ["disgusting", "expensive"],
+  "sentiment_intensity": "Extreme",
+  "grammar_style": "Complete sentences",
+  "punctuation_style": "Heavy exclamations",
+  "focus_aspects": {
+    "restaurants": ["customer service", "technicians", "billing department"],
+    "general": ["problems", "rude behavior"]
+  },
+  "typical_length": "Long",
+  "typical_length_words": [100],
+  "rating_patterns": {
+    "average": 1.0,
+    "tendency": "Harsh",
+    "distribution": "Mostly 1s"
+  },
+  "personality_traits": ["critical", "displeased"],
+  "emotional_expression": "Dramatic"
+}
+
+ITEM PROFILE:
+{
+  "item_name": "Katona James A Sr Roofing",
+  "item_type": "Service",
+  "common_themes": ["price", "quality of work", "communication", "professionalism"],
+  "theme_details": {
+    "theme1": "Customers complain about hidden costs and price increases.",
+    "theme2": "Customers report poor quality of work, leaks and damage."
+  },
+  "sentiment_distribution": {
+    "overall_sentiment": "negative",
+    "average_rating": 1.0,
+    "rating_breakdown": "All reviews are 1 star or below."
+  },
+  "pros": [],
+  "cons": ["unclear pricing", "poor quality of work", "unprofessional behavior"],
+  "polarizing_aspects": ["Jim's communication and professionalism"],
+  "common_vocabulary": ["damage", "increase", "down payment", "leaks", "rude"],
+  "emotional_tone": "disappointed",
+  "specific_mentions": ["legal proceedings", "fire hose-like downspout"]
+}
+
+USER'S PAST REVIEW EXAMPLES:
+Example 1:
+Rating: 1.0 stars
+Review: Terrible customer service. The technicians cannot solve problems, and the billing department
+is rude and unresponsive.  Don't ask to talk to supervisor because they don't want to transfer you.
+Don't complain about getting calls that are dial toned because they can't deal with it. They expect
+that going on the Do Not Call list will work. Disgusting And expensive.
+
+ITEM'S PAST REVIEW EXAMPLES:
+Example 1:
+Rating: 1.0 stars
+Review: Mr.Katona is currently in legal proceedings because of the damage he is caused at our home.
+
+As the other reviewers reported, he tells you one price, accepts a down payment, then increases the
+price by 40% the day he begins work.
+
+Refused to put anything in writing, and was barely responsive even during our law suit. 
+
+I don't believe anyone should be forced to go through a nightmare like this company.
+
+Example 2:
+Rating: 5.0 stars
+Review: Jim was able to stop by the day I called (on a Sunday evening, no less) to assess a leak in
+our kitchen ceiling.  He was out the next day to repair and quickly resolved the matter.  He
+answered all our questions and was very helpful all around.  Hopefully this is the last of our roof
+issues for some time, but if not I'll be keeping Jim's card handy!
+
+CRITIQUE CHECKLIST:
+
+1. STYLE CONSISTENCY:
+   ✓ Does it match user's vocabulary level and sentence structure?
+   ✓ Is formality/casualness consistent with user's style?
+   ✓ Are punctuation patterns similar?
+   ✓ Does length match user's typical length?
+   ✓ Is grammar style consistent?
+
+2. SENTIMENT/EMOTION ALIGNMENT:
+   ✓ Does emotional tone match the rating intensity?
+   ✓ Are the intensity markers appropriate (amazing/great/okay/bad/terrible)?
+   ✓ Does the sentiment strength match the user's typical expression level?
+   ✓ Is sentiment consistent throughout?
+   ✓ Does it convey appropriate emotion for this rating?
+   ✓ Are we using extreme words (amazing/terrible) vs moderate words (good/bad) correctly?
+
+3. TOPIC/SEMANTIC ALIGNMENT:
+   ✓ Does it mention specific, concrete features of this business?
+   ✓ Does it use relevant vocabulary from item reviews?
+   ✓ Are topics semantically similar to what others mention?
+   ✓ Does it avoid generic phrases?
+
+4. COHERENCE:
+   ✓ Is it the right length?
+   ✓ Does it provide meaningful information?
+   ✓ Is it coherent and well-structured?
+
+REFINEMENT STRATEGY:
+- If style mismatches: adjust vocabulary, structure, formality
+- If sentiment intensity is off: use stronger/weaker intensity markers (amazing→great→good→okay)
+- If sentiment is off: strengthen or soften emotional expression to match rating
+- If topics are generic: add specific business details
+- If length is wrong: condense to match user's typical 2-5 sentence reviews
+- Maintain the rating unless clearly misaligned
+
+OUTPUT FORMAT:
+Critique: [What needs refinement, if anything - be specific]
+Refined Review: [The improved review, or original if no changes needed]
+
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+
+
+
+====================================================================================================
+LLM CALL #10
+====================================================================================================
+
+REQUEST:
+----------------------------------------------------------------------------------------------------
+
+
+RESPONSE:
+----------------------------------------------------------------------------------------------------
+Critique: The generated review is generally well-written and aligns with Matt's writing tone.
+However, to further improve its coherence and provide more actionable feedback, some suggestions can
+be made:
+
+1. STYLE CONSISTENCY:
+   - The punctuation style could be adjusted slightly for a smoother read; the excessive exclamation
+   marks might detract from the impact of the review.
+
+2. SENTIMENT/EMOTION ALIGNMENT:
+   - The emotional tone matches the rating intensity well, but to emphasize the disappointment and
+   outrage, consider incorporating more vivid language related to feelings such as betrayal or
+   frustration.
+
+3. TOPIC/SEMANTIC ALIGNMENT:
+   - Provide specific examples of the leaks and damage caused by Katona James A Sr Roofing to make
+   the review more impactful and informative.
+
+4. COHERENCE:
+   - The review is coherent and well-structured but could benefit from a tighter focus on the main
+   issues with Katona James A Sr Roofing, which are unclear pricing, poor quality of work, and
+   unprofessional behavior.
+
+OUTPUT FORMAT:
+Critique: To enhance the impact and informative value of the review, consider providing specific
+examples of leaks and damage caused by Katona James A Sr Roofing, adjust punctuation for a smoother
+read, and emphasize the disappointment and outrage through vivid language related to feelings such
+as betrayal or frustration.
+
+Refined Review: "Terrible! Katona James A Sr Roofing's shoddy workmanship resulted in persistent
+leaks and extensive damage to our home. Their deceptive pricing tactics, which included hidden costs
+and unexplained price increases, left us feeling betrayed and outraged. The unprofessional behavior
+exhibited by their technicians and the billing department was appalling, further frustrating and
+displeasing us. We strongly advise against using this service provider at all costs!"
+

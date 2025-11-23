@@ -77,8 +77,6 @@ def format_llm_call(call: dict, index: int) -> str:
         output.append(f"\n[{role.upper()}]")
         output.append(format_text(content))
     
-    # Note: Parameters are typically in the LLM call, not in the message list
-    # This structure doesn't include separate parameters
     
     # Format response
     output.append("\n")
@@ -126,26 +124,3 @@ def format_llm_logs(json_file: str, output_file: str = None):
         print(f"Formatted logs saved to: {output_file}")
     else:
         print(result)
-
-
-def main():
-    """Main entry point for the script."""
-    if len(sys.argv) < 2:
-        print("Usage: python format_llm_logs.py <json_file> [output_file]")
-        print("\nExample:")
-        print("  python format_llm_logs.py reasoning_loop_run.json")
-        print("  python format_llm_logs.py reasoning_loop_run.json formatted_logs.txt")
-        sys.exit(1)
-    
-    json_file = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 else None
-    
-    if not Path(json_file).exists():
-        print(f"Error: File not found: {json_file}")
-        sys.exit(1)
-    
-    format_llm_logs(json_file, output_file)
-
-
-if __name__ == "__main__":
-    main()

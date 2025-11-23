@@ -157,6 +157,7 @@ class SimulationEvaluator(BaseEvaluator):
         sentiment_error = review_details['sentiment_error']
         emotion_error = review_details['emotion_error']
         topic_error = review_details['topic_error']
+        print(sentiment_error, emotion_error, topic_error)
         review_generation = 1 - (sentiment_error * 0.25 + emotion_error * 0.25 + topic_error * 0.5)
         overall_quality = (preference_estimation + review_generation) / 2
 

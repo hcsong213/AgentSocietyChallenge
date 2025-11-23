@@ -12,35 +12,23 @@ from __future__ import annotations
 import json
 import re
 import logging
-import os
 from typing import Dict, Any, List
 
 from websocietysimulator import Simulator
 from websocietysimulator.agent import SimulationAgent
-from websocietysimulator.llm import OllamaLLM, LLMBase
-from websocietysimulator.agent.modules.memory_modules import MemoryDILU
-
-if __name__ == "__main__":
-    from Util import format_llm_logs
-else:
-    try:
-        from ..Util import format_llm_logs
-    except ImportError:
-        from Util import format_llm_logs
+from websocietysimulator.llm import LLMBase
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("structured_profile_agent")
 
-
 class StructuredProfileAgent(SimulationAgent):
-    """Agent with structured profiling approach - no reasoning loops."""
+    """Agent with structured profiling approach"""
 
     def __init__(self, llm: LLMBase):
         super().__init__(llm=llm)
-        self.memory = MemoryDILU(llm=llm)
 
     def workflow(self) -> Dict[str, Any]:
-        """Execute structured workflow: profile → align → generate → refine."""
+        """Execute structured workflow: profile -> align -> generate -> refine."""
         if not self.interaction_tool:
             raise RuntimeError("interaction_tool is required")
 
@@ -82,7 +70,7 @@ class StructuredProfileAgent(SimulationAgent):
             return {"stars": 0.0, "review": ""}
 
     def _build_user_profile(self, user_reviews: List[Dict], user_profile_raw: Dict) -> str:
-        """Build comprehensive structured user profile with liberal review sampling."""
+        """Build comprehensive structured user profile with review sampling."""
         if not user_reviews:
             return json.dumps({
                 "writing_tone": "neutral",
@@ -106,7 +94,7 @@ User's review samples ({len(sampled)} reviews):
 {reviews_text}
 
 Additional user info:
-{json.dumps(user_profile_raw, ensure_ascii=False)[:300]}
+{json.dumps(user_profile_raw, ensure_ascii=False)}
 
 Create a comprehensive structured profile with the following schema:
 
@@ -118,6 +106,8 @@ OUTPUT SCHEMA (JSON format):
   "sentiment_tendency": "[positive/neutral/negative/mixed]",
   "sentiment_details": "[how generous or harsh they are with ratings]",
   "vocabulary_patterns": ["list", "of", "characteristic", "words", "and", "phrases", "they", "use"],
+  "intensity_markers": ["words that amplify emotion: amazing/terrible/extremely/very/somewhat/okay/etc."],
+  "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
   "grammar_style": "[complete sentences/fragments/run-ons/mix]",
   "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
   "focus_aspects": {{
@@ -172,7 +162,7 @@ Provide ONLY the JSON object, no additional text.
 NOTE: The 'item' can be either a physical product OR a service/business (restaurant, hotel, etc.).
 
 Item details:
-{json.dumps(item_info, ensure_ascii=False)[:400]}
+{json.dumps(item_info, ensure_ascii=False)}
 
 Item reviews ({len(sampled)} reviews):
 {reviews_text}
@@ -225,9 +215,6 @@ USER PROFILE:
 ITEM PROFILE:
 {item_profile}
 
-ITEM DETAILS:
-{json.dumps(item_info, ensure_ascii=False)[:400]}
-
 Your task: Perform CROSS-REASONING to determine how THIS USER would review THIS ITEM.
 
 Analyze the following aspects explicitly:
@@ -262,8 +249,10 @@ OUTPUT SCHEMA:
     "aspect2": "[positive/negative/neutral] - why"
   }},
   "specific_vocabulary_to_use": ["word1", "phrase2", "term3"],
+  "intensity_words_to_use": ["specific intensity markers matching user's style: amazing/great/okay/terrible/etc."],
   "concrete_details_to_include": ["specific menu item", "specific service detail", "etc."],
   "emotional_angle": "how user would feel about this experience",
+  "sentiment_strength": "[how strongly to express the sentiment: very positive/moderately positive/slightly positive/etc.]",
   "style_directives": {{
     "tone": "[casual/formal/etc.]",
     "length": "[X sentences or Y words]",
@@ -292,66 +281,58 @@ Provide ONLY the JSON object with your alignment analysis.
         # Get sample reviews for style reference
         user_review_samples = self._format_review_samples(user_reviews, max_samples=4)
         
-        # Use memory-based similarity search for most relevant item review
-        for review in item_reviews:
-            review_text = review.get('text', '')
-            if review_text:
-                self.memory(f'review: {review_text}')
-        
-        similar_item_review = ""
-        if user_reviews and self.memory.scenario_memory._collection.count() > 0:
-            similar_item_review = self.memory(f'{user_reviews[0]["text"]}')
-            logger.info(f"Found similar item review (length: {len(similar_item_review)} chars)")
-        
         prompt = f"""Generate a review following this alignment plan.
 
-ALIGNMENT PLAN (instructions for what to write):
-{alignment_plan}
+        ALIGNMENT PLAN (instructions for what to write):
+        {alignment_plan}
 
-USER PROFILE (how to write it):
-{user_profile}
+        USER PROFILE (how to write it):
+        {user_profile}
 
-ITEM PROFILE (context about the item):
-{item_profile}
+        ITEM PROFILE (context about the item):
+        {item_profile}
 
-USER'S PAST REVIEW EXAMPLES (study for authentic voice):
-{user_review_samples}
+        USER'S PAST REVIEW EXAMPLES (study for authentic voice):
+        {user_review_samples}
 
-SIMILAR ITEM REVIEW (semantic/emotional reference):
-{similar_item_review if similar_item_review else "No similar review found."}
 
-CRITICAL INSTRUCTIONS:
+        CRITICAL INSTRUCTIONS:
 
-1. FOLLOW THE ALIGNMENT PLAN:
-   - Use the predicted rating
-   - Mention the key aspects specified
-   - Use the specific vocabulary and concrete details listed
-   - Apply the emotional angle described
-   - Follow all style directives (tone, length, punctuation, structure)
+        1. FOLLOW THE ALIGNMENT PLAN:
+        - Use the predicted rating
+        - Mention the key aspects specified
+        - Use the specific vocabulary and concrete details listed
+        - Use the intensity markers specified (amazing/terrible/okay/etc.)
+        - Match the sentiment strength indicated (very positive vs moderately positive)
+        - Apply the emotional angle described
+        - Follow all style directives (tone, length, punctuation, structure)
 
-2. MIMIC THE USER'S AUTHENTIC VOICE:
-   - Study the example reviews carefully
-   - Copy their exact vocabulary level and sentence patterns
-   - Match their grammar style (fragments vs. complete sentences)
-   - Use their punctuation patterns (exclamations, ellipses, etc.)
-   - Mirror their emotional expression style
-   - Match their typical review length
+        2. MIMIC THE USER'S AUTHENTIC VOICE:
+        - Study the example reviews carefully
+        - Copy their exact vocabulary level and sentence patterns
+        - CRITICAL: Match their intensity markers (if they say "amazing" don't say "good", if they say "okay" don't say "great")
+        - Match the strength of their sentiment expression (extreme vs moderate language)
+        - Match their grammar style (fragments vs. complete sentences)
+        - Use their punctuation patterns (exclamations, ellipses, etc.)
+        - Mirror their emotional expression style
+        - Match their typical review length (count words/sentences in examples)
+        - KEEP IT CONCISE: Most reviews are 2-5 sentences, not paragraphs
 
-3. ENSURE SEMANTIC/TOPIC ALIGNMENT:
-   - Include the concrete details from the alignment plan
-   - Use vocabulary that appears in the item profile
-   - Echo phrases from the similar item review when appropriate
-   - Be specific about this business, not generic
+        3. ENSURE SEMANTIC/TOPIC ALIGNMENT:
+        - Include the concrete details from the alignment plan
+        - Use vocabulary that appears in the item profile
+        - Echo phrases from the similar item review when appropriate
+        - Be specific about this business, not generic
 
-Think of it as: The ALIGNMENT PLAN tells you WHAT to say, the USER PROFILE tells you HOW to say it, and the EXAMPLES show you the user's authentic voice to copy.
+        Think of it as: The ALIGNMENT PLAN tells you WHAT to say, the USER PROFILE tells you HOW to say it, and the EXAMPLES show you the user's authentic voice to copy.
 
-Output format:
-stars: [1.0|2.0|3.0|4.0|5.0]
-review: [your review text in the user's voice]
-"""
+        Output format:
+        stars: [1.0|2.0|3.0|4.0|5.0]
+        review: [your review text in the user's voice]
+        """
         
         messages = [{"role": "user", "content": prompt}]
-        response = self.llm(messages=messages, temperature=0.1, max_tokens=400)
+        response = self.llm(messages=messages, temperature=0.1, max_tokens=250)  # Reduced to encourage shorter, punchier reviews
         
         return self._parse_review_output(response)
 
@@ -365,11 +346,7 @@ review: [your review text in the user's voice]
         # Sample reviews for comparison
         user_review_samples = self._format_review_samples(user_reviews, max_samples=3)
         item_review_samples = self._format_review_samples(item_reviews, max_samples=3)
-        
-        # Get similar item review from memory
-        similar_item_review = ""
-        if user_reviews and self.memory.scenario_memory._collection.count() > 0:
-            similar_item_review = self.memory(f'{user_reviews[0]["text"]}')
+
         
         prompt = f"""Perform SELF-CRITIQUE on this generated review and refine if needed.
 
@@ -389,9 +366,6 @@ USER'S PAST REVIEW EXAMPLES:
 ITEM'S PAST REVIEW EXAMPLES:
 {item_review_samples}
 
-SIMILAR ITEM REVIEW:
-{similar_item_review if similar_item_review else "No similar review available."}
-
 CRITIQUE CHECKLIST:
 
 1. STYLE CONSISTENCY:
@@ -403,8 +377,11 @@ CRITIQUE CHECKLIST:
 
 2. SENTIMENT/EMOTION ALIGNMENT:
    ✓ Does emotional tone match the rating intensity?
+   ✓ Are the intensity markers appropriate (amazing/great/okay/bad/terrible)?
+   ✓ Does the sentiment strength match the user's typical expression level?
    ✓ Is sentiment consistent throughout?
    ✓ Does it convey appropriate emotion for this rating?
+   ✓ Are we using extreme words (amazing/terrible) vs moderate words (good/bad) correctly?
 
 3. TOPIC/SEMANTIC ALIGNMENT:
    ✓ Does it mention specific, concrete features of this business?
@@ -419,9 +396,10 @@ CRITIQUE CHECKLIST:
 
 REFINEMENT STRATEGY:
 - If style mismatches: adjust vocabulary, structure, formality
-- If sentiment is off: strengthen or soften emotional expression
+- If sentiment intensity is off: use stronger/weaker intensity markers (amazing→great→good→okay)
+- If sentiment is off: strengthen or soften emotional expression to match rating
 - If topics are generic: add specific business details
-- If length is wrong: expand with specifics or condense
+- If length is wrong: condense to match user's typical 2-5 sentence reviews
 - Maintain the rating unless clearly misaligned
 
 OUTPUT FORMAT:
@@ -430,7 +408,7 @@ Refined Review: [The improved review, or original if no changes needed]
 """
         
         messages = [{"role": "user", "content": prompt}]
-        response = self.llm(messages=messages, temperature=0.1, max_tokens=500)
+        response = self.llm(messages=messages, temperature=0.1, max_tokens=350)  # Reduced to maintain conciseness
         
         refined_review = self._parse_refinement_output(response, original_review=review_text)
         logger.info(f"Refinement: {refined_review[:100]}...")
@@ -476,14 +454,15 @@ Refined Review: [The improved review, or original if no changes needed]
                 stars = float(stars_match.group(1))
                 stars = max(1.0, min(5.0, stars))
             
-            review_match = re.search(r"review\s*[:=]\s*(.+?)(?=\n\n|\Z)", text, re.IGNORECASE | re.DOTALL)
-            if review_match:
-                review = review_match.group(1).strip()
+            # Find where 'review:' starts and take everything after it (no truncation)
+            review_start_idx = text.lower().find('review:')
+            if review_start_idx != -1:
+                review = text[review_start_idx + len('review:'):].strip()
             else:
-                for line in text.split("\n"):
-                    if line.lower().startswith("review:"):
-                        review = line.split(":", 1)[1].strip()
-                        break
+                # Fallback: try regex match
+                review_match = re.search(r"review\s*[:=]\s*(.+)", text, re.IGNORECASE | re.DOTALL)
+                if review_match:
+                    review = review_match.group(1).strip()
             
             if not review:
                 review = text.strip()
@@ -527,52 +506,3 @@ Refined Review: [The improved review, or original if no changes needed]
             formatted.append(f"Example {i}:\nRating: {stars} stars\nReview: {text}")
         
         return "\n\n".join(formatted)
-
-
-if __name__ == "__main__":
-    from Util import format_llm_logs
-    import os
-
-    sim = Simulator(data_dir="dataset", device="gpu", cache=True)
-    here = os.path.dirname(__file__)
-
-    task_set = "yelp"  # "goodreads" or "yelp"
-    task_dir = os.path.join("example", "track1", task_set, "tasks")
-    groundtruth_dir = os.path.join("example", "track1", task_set, "groundtruth")
-    sim.set_task_and_groundtruth(task_dir=task_dir, groundtruth_dir=groundtruth_dir)
-
-    llm = OllamaLLM(model="mistral")
-    sim.set_agent(StructuredProfileAgent)
-    sim.set_llm(llm)
-
-    # Set to True for single task debugging
-    if False:
-        print("Running structured profile agent for task 0...")
-        res = sim.run_single_task(task_index=0, wrap_llm_with_logger=True)
-        
-        output_data = {
-            "output": res.get("output"),
-            "llm_calls": res.get("llm_calls", [])
-        }
-
-        print(json.dumps({"output_present": bool(output_data["output"]), 
-                         "llm_call_count": len(output_data["llm_calls"])}, indent=2))
-
-        log_json_path = './Outputs/structured_profile_output.json'
-        with open(log_json_path, "w", encoding="utf-8") as f:
-            json.dump(output_data, f, indent=2, ensure_ascii=False)
-        print(f"Saved detailed logs to {log_json_path}")
-
-        formatted_txt_path = './Outputs/structured_profile_output.txt'
-        try:
-            format_llm_logs(log_json_path, formatted_txt_path)
-            print(f"Saved formatted LLM logs to {formatted_txt_path}")
-        except Exception as e:
-            logger.exception("Failed to format LLM logs: %s", e)
-    else:
-        outputs = sim.run_simulation(number_of_tasks=400)
-        evaluation_results = sim.evaluate()
-        with open(f'./Outputs/structured_profile_evaluation_{task_set}.json', 'w') as f:
-            json.dump(evaluation_results, f, indent=4)
-
-        print(f"The evaluation_results is: {evaluation_results}")
