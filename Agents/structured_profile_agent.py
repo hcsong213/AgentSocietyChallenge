@@ -95,6 +95,17 @@ class StructuredProfileAgent(SimulationAgent):
 
     def _build_user_profile(self, user_reviews: List[Dict], user_profile_raw: Dict) -> str:
         """Build comprehensive structured user profile with review sampling."""
+
+        # Detect review source (amazon / goodreads / yelp). Fall back to generic.
+        source = None
+        try:
+            source = user_profile_raw.get("source", None)
+            if not source and user_reviews:
+                source = user_reviews[0].get("source", None)
+        except:
+            source = None
+        source = (source or "").lower()
+
         if not user_reviews:
             return json.dumps({
                 "writing_tone": "neutral",
@@ -111,8 +122,153 @@ class StructuredProfileAgent(SimulationAgent):
             f"Rating: {r.get('stars', 'N/A')} stars\nReview: {r.get('text', '')}"
             for r in sampled
         ])
-        
-        prompt = f"""Analyze this user's review patterns and create a STRUCTURED PROFILE.
+
+        if source == "amazon":
+            prompt = f"""
+Analyze this Amazon user's review patterns and create a STRUCTURED PROFILE.
+
+User's review samples ({len(sampled)} reviews):
+{reviews_text}
+
+Additional user info:
+{json.dumps(user_profile_raw, ensure_ascii=False)}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "user_name": "[user's name if available in profile, otherwise 'Unknown']",
+  "writing_tone": "[casual/formal/sarcastic/enthusiastic/balanced/etc.]",
+  "writing_tone_details": "[2-3 sentence description of their voice and style]",
+  "sentiment_tendency": "[positive/neutral/negative/mixed]",
+  "sentiment_details": "[how generous or harsh they are with ratings]",
+  "vocabulary_patterns": ["list", "of", "characteristic", "words", "and", "phrases", "they", "use"],
+  "intensity_markers": ["words that amplify emotion: amazing/terrible/extremely/very/somewhat/okay/etc."],
+  "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
+  "grammar_style": "[complete sentences/fragments/run-ons/mix]",
+  "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+
+  "product_focus": ["durability", "accuracy", "functionality", "value", "etc."],
+  "purchase_patterns": "[categories/themes/uses shared between reviewed products, if any]"
+  "value_sensitivity": "[frugal/high spender/etc.]",
+
+  "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
+  "typical_length_words": [average word count],
+  "rating_patterns": {{
+    "average": [average star rating],
+    "tendency": "[harsh/generous/moderate]",
+    "distribution": "[mostly 5s and 1s / balanced / etc.]"
+  }},
+  "personality_traits": ["descriptors of their personality inferred from reviews"],
+  "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
+            
+        elif source == "goodreads":
+            prompt = f"""
+Analyze this Goodreads user's review patterns and create a STRUCTURED PROFILE.
+
+User's review samples ({len(sampled)} reviews):
+{reviews_text}
+
+Additional user info:
+{json.dumps(user_profile_raw, ensure_ascii=False)}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "user_name": "[user's name if available in profile, otherwise 'Unknown']",
+  "writing_tone": "[casual/formal/sarcastic/enthusiastic/balanced/etc.]",
+  "writing_tone_details": "[2-3 sentence description of their voice and style]",
+  "sentiment_tendency": "[positive/neutral/negative/mixed]",
+  "sentiment_details": "[how generous or harsh they are with ratings]",
+  "vocabulary_patterns": ["list", "of", "characteristic", "words", "and", "phrases", "they", "use"],
+  "intensity_markers": ["words that amplify emotion: amazing/terrible/extremely/very/somewhat/okay/etc."],
+  "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
+  "grammar_style": "[complete sentences/fragments/run-ons/mix]",
+  "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+
+  "literary_taste": ["genres", "favorite authors", "themes", "etc."],
+  "interpretive_focus": ["plot", "characters", "world-building", "prose", "etc."],
+
+  "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
+  "typical_length_words": [average word count],
+  "rating_patterns": {{
+    "average": [average star rating],
+    "tendency": "[harsh/generous/moderate]",
+    "distribution": "[mostly 5s and 1s / balanced / etc.]"
+  }},
+  "personality_traits": ["descriptors of their personality inferred from reviews"],
+  "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
+            
+        elif source == "yelp":
+
+            yelp_info = {
+                "user_id": user_profile_raw.get("user_id"),
+                "name": user_profile_raw.get("name", "Unknown"),
+                "review_count": user_profile_raw.get("review_count"),
+                "useful": user_profile_raw.get("useful"),
+                "funny": user_profile_raw.get("funny"),
+                "cool": user_profile_raw.get("cool")
+            }
+
+            prompt = f"""
+Analyze this Yelp user's review patterns and create a STRUCTURED PROFILE.
+
+User's review samples ({len(sampled)} reviews):
+{reviews_text}
+
+Additional user info:
+{json.dumps(user_profile_raw, ensure_ascii=False)}
+
+Also consider the user's metadata as influencing factors:
+- review_count (weighting factor for average behavior): {yelp_info['review_count']}
+- useful votes (tendency to write helpful reviews): {yelp_info['useful']}
+- funny votes (tendency toward humor in reviews): {yelp_info['funny']}
+- cool votes (coolness/relatability): {yelp_info['cool']}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "user_name": "[user's name if available in profile, otherwise 'Unknown']",
+  "writing_tone": "[casual/formal/sarcastic/enthusiastic/balanced/etc.]",
+  "writing_tone_details": "[2-3 sentence description of their voice and style]",
+  "sentiment_tendency": "[positive/neutral/negative/mixed]",
+  "sentiment_details": "[how generous or harsh they are with ratings]",
+  "vocabulary_patterns": ["list", "of", "characteristic", "words", "and", "phrases", "they", "use"],
+  "intensity_markers": ["words that amplify emotion: amazing/terrible/extremely/very/somewhat/okay/etc."],
+  "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
+  "grammar_style": "[complete sentences/fragments/run-ons/mix]",
+  "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+
+  "business_focus": ["service", "ambiance", "facility quality/availability", "food quality", "price sensitivity", "parking availability", "etc."],
+  "taste_patterns": "[cuisines/establishment styles/themes shared between reviewed businesses, if any]"
+
+  "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
+  "typical_length_words": [average word count],
+  "rating_patterns": {{
+    "average": [average star rating],
+    "tendency": "[harsh/generous/moderate]",
+    "distribution": "[mostly 5s and 1s / balanced / etc.]"
+  }},
+  "personality_traits": ["descriptors of their personality inferred from reviews"],
+  "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
+            
+        else:
+            prompt = f"""
+Analyze this user's review patterns and create a GENERIC STRUCTURED PROFILE.
 
 User's review samples ({len(sampled)} reviews):
 {reviews_text}
@@ -135,7 +291,6 @@ OUTPUT SCHEMA (JSON format):
   "grammar_style": "[complete sentences/fragments/run-ons/mix]",
   "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
   "focus_aspects": {{
-    "restaurants": ["service", "food quality", "ambiance", "etc."],
     "general": ["what they typically comment on"]
   }},
   "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
@@ -145,13 +300,13 @@ OUTPUT SCHEMA (JSON format):
     "tendency": "[harsh/generous/moderate]",
     "distribution": "[mostly 5s and 1s / balanced / etc.]"
   }},
-  "personality_traits": ["descriptors of their personality in reviews"],
+  "personality_traits": ["descriptors of their personality inferred from reviews"],
   "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
 }}
 
 Provide ONLY the JSON object, no additional text.
 """
-        
+
         messages = [{"role": "user", "content": prompt}]
         response = self.llm(messages=messages, temperature=0.0, max_tokens=800).strip()
         
