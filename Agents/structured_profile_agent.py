@@ -24,8 +24,10 @@ logger = logging.getLogger("structured_profile_agent")
 class StructuredProfileAgent(SimulationAgent):
     """Agent with structured profiling approach"""
 
-    def __init__(self, llm: LLMBase):
+    def __init__(self, llm: LLMBase, enable_refinement: bool = True, enable_profiling: bool = True):
         super().__init__(llm=llm)
+        self.enable_refinement = enable_refinement
+        self.enable_profiling = enable_profiling
 
     def workflow(self) -> Dict[str, Any]:
         """Execute structured workflow: profile -> align -> generate -> refine."""
@@ -44,24 +46,46 @@ class StructuredProfileAgent(SimulationAgent):
             
             logger.info(f"Fetched {len(user_reviews)} user reviews, {len(item_reviews)} item reviews")
 
-            # Step 1: Build comprehensive user profile
-            user_profile = self._build_user_profile(user_reviews, user_profile_raw)
-            logger.info(f"User profile built: {len(str(user_profile))} chars")
+            # Conditional profiling based on toggle
+            if self.enable_profiling:
+                # Step 1: Build comprehensive user profile
+                user_profile = self._build_user_profile(user_reviews, user_profile_raw)
+                logger.info(f"User profile built: {len(str(user_profile))} chars")
 
-            # Step 2: Build item aspect profile
-            item_profile = self._build_item_profile(item_reviews, item_info)
-            logger.info(f"Item profile built: {len(str(item_profile))} chars")
+                # Step 2: Build item aspect profile
+                item_profile = self._build_item_profile(item_reviews, item_info)
+                logger.info(f"Item profile built: {len(str(item_profile))} chars")
 
-            # Step 3: Cross-reasoning (user x item alignment)
-            alignment_plan = self._cross_reasoning(user_profile, item_profile, item_info)
+                # Step 3: Cross-reasoning (user x item alignment)
+                alignment_plan = self._cross_reasoning(user_profile, item_profile, item_info)
+            else:
+                # Skip profiling - use minimal placeholders
+                user_profile = json.dumps({
+                    "note": "Profiling disabled for ablation study",
+                    "user_data": user_profile_raw
+                })
+                item_profile = json.dumps({
+                    "note": "Profiling disabled for ablation study",
+                    "item_data": item_info
+                })
+                alignment_plan = json.dumps({
+                    "note": "Profiling disabled - using basic alignment",
+                    "predicted_rating": 3.0
+                })
+                logger.info("Skipping profiling and alignment (disabled for ablation study)")
             logger.info(f"Alignment plan: {alignment_plan[:100]}...")
 
             # Step 4: Generate review in user voice
             draft = self._generate_draft(alignment_plan, user_profile, item_profile, user_reviews, item_reviews)
             logger.info(f"Draft: stars={draft['stars']}, review={draft['review'][:50]}...")
 
-            # Step 5: Self-critique and refinement
-            final = self._simple_refinement(draft, user_profile, item_profile, user_reviews, item_reviews)
+            # Conditional refinement based on toggle
+            if self.enable_refinement:
+                # Step 5: Self-critique and refinement
+                final = self._simple_refinement(draft, user_profile, item_profile, user_reviews, item_reviews)
+            else:
+                logger.info("Skipping refinement (disabled for ablation study)")
+                final = draft
             
             return final
 

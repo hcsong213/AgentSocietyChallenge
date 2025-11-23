@@ -14,9 +14,12 @@ logger = logging.getLogger("reasoning_loop_agent")
 
 
 class ReasoningLoopAgent(SimulationAgent):
-    def __init__(self, llm: LLMBase, max_reasoning_steps: int = 4):
+    def __init__(self, llm: LLMBase, max_reasoning_steps: int = 4, 
+                 enable_refinement: bool = True, enable_profiling: bool = True):
         super().__init__(llm=llm)
         self.max_reasoning_steps = max_reasoning_steps
+        self.enable_refinement = enable_refinement
+        self.enable_profiling = enable_profiling
 
     def workflow(self) -> Dict[str, Any]:
         try:
@@ -30,11 +33,17 @@ class ReasoningLoopAgent(SimulationAgent):
             
             logger.info(f"Fetched {len(user_reviews)} user reviews, {len(item_reviews)} item reviews")
 
-            user_analysis = self._analyze_user_reviews(user_reviews)
-            logger.info(f"User analysis: {user_analysis[:100]}...")
+            # Conditional profiling based on toggle
+            if self.enable_profiling:
+                user_analysis = self._analyze_user_reviews(user_reviews)
+                logger.info(f"User analysis: {user_analysis[:100]}...")
 
-            item_analysis = self._analyze_item_reviews(item_reviews)
-            logger.info(f"Item analysis: {item_analysis[:100]}...")
+                item_analysis = self._analyze_item_reviews(item_reviews)
+                logger.info(f"Item analysis: {item_analysis[:100]}...")
+            else:
+                user_analysis = "Profiling disabled for ablation study."
+                item_analysis = "Profiling disabled for ablation study."
+                logger.info("Skipping profiling (disabled for ablation study)")
 
             reasoning_insights = self._reasoning_loop(user_analysis, item_analysis, user_profile, item_info)
             logger.info(f"Completed {len(reasoning_insights)} reasoning steps")
@@ -42,7 +51,12 @@ class ReasoningLoopAgent(SimulationAgent):
             draft = self._generate_draft(reasoning_insights, user_analysis, item_analysis)
             logger.info(f"Draft: stars={draft['stars']}, review={draft['review'][:50]}...")
 
-            final = self._simple_refinement(draft, user_analysis)
+            # Conditional refinement based on toggle
+            if self.enable_refinement:
+                final = self._simple_refinement(draft, user_analysis)
+            else:
+                logger.info("Skipping refinement (disabled for ablation study)")
+                final = draft
             
             return final
 

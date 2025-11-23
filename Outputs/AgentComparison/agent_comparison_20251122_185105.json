@@ -1,0 +1,153 @@
+{
+    "experiment_type": "agent_comparison",
+    "llm_model": "mistral",
+    "datasets": [
+        "yelp",
+        "amazon",
+        "goodreads"
+    ],
+    "number_of_tasks_per_dataset": 1,
+    "agents": {
+        "BaselineAgent": {
+            "agent": "BaselineAgent",
+            "llm_model": "mistral",
+            "datasets": {
+                "yelp": {
+                    "metrics": {
+                        "preference_estimation": 0.8,
+                        "review_generation": 0.6843030924575302,
+                        "overall_quality": 0.7421515462287651
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "amazon": {
+                    "metrics": {
+                        "preference_estimation": 0.9,
+                        "review_generation": 0.96562997397483,
+                        "overall_quality": 0.9328149869874149
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "goodreads": {
+                    "metrics": {
+                        "preference_estimation": 0.6,
+                        "review_generation": 0.960338336383229,
+                        "overall_quality": 0.7801691681916145
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                }
+            },
+            "aggregated_metrics": {
+                "preference_estimation": 0.7666666666666667,
+                "review_generation": 0.8700904676051963,
+                "overall_quality": 0.8183785671359315
+            }
+        },
+        "StructuredProfileAgent": {
+            "agent": "StructuredProfileAgent",
+            "llm_model": "mistral",
+            "datasets": {
+                "yelp": {
+                    "metrics": {
+                        "preference_estimation": 0.8,
+                        "review_generation": 0.6834552310795393,
+                        "overall_quality": 0.7417276155397696
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "amazon": {
+                    "metrics": {
+                        "preference_estimation": 0.9,
+                        "review_generation": 0.9569343294812802,
+                        "overall_quality": 0.9284671647406402
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "goodreads": {
+                    "metrics": {
+                        "preference_estimation": 0.8,
+                        "review_generation": 0.9569817207865524,
+                        "overall_quality": 0.8784908603932762
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                }
+            },
+            "aggregated_metrics": {
+                "preference_estimation": 0.8333333333333334,
+                "review_generation": 0.8657904271157907,
+                "overall_quality": 0.849561880224562
+            }
+        },
+        "ReasoningLoopAgent": {
+            "agent": "ReasoningLoopAgent",
+            "llm_model": "mistral",
+            "datasets": {
+                "yelp": {
+                    "metrics": {
+                        "preference_estimation": 0.8,
+                        "review_generation": 0.8298599664173267,
+                        "overall_quality": 0.8149299832086634
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "amazon": {
+                    "metrics": {
+                        "preference_estimation": 0.9,
+                        "review_generation": 0.9261504060872061,
+                        "overall_quality": 0.9130752030436031
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "goodreads": {
+                    "metrics": {
+                        "preference_estimation": 0.7,
+                        "review_generation": 0.9191352837667095,
+                        "overall_quality": 0.8095676418833547
+                    },
+                    "data_info": {
+                        "evaluated_count": 1,
+                        "original_simulation_count": 1,
+                        "original_ground_truth_count": 400
+                    }
+                }
+            },
+            "aggregated_metrics": {
+                "preference_estimation": 0.8000000000000002,
+                "review_generation": 0.8917152187570808,
+                "overall_quality": 0.8458576093785405
+            }
+        }
+    }
+}
