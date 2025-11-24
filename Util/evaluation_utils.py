@@ -166,6 +166,7 @@ if __name__ == "__main__":
     from websocietysimulator import Simulator
     from Agents.structured_profile_agent import StructuredProfileAgent
     from Agents.baseline_agent import BaselineAgent
+    from Agents.ensemble_reviews_agent import EnsembleReviewsAgent
     from Util.ollama_llm import OllamaLLM
     
     # Configuration

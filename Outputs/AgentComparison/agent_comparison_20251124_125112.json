@@ -1,0 +1,59 @@
+{
+    "experiment_type": "agent_comparison",
+    "llm_model": "mistral",
+    "datasets": [
+        "yelp",
+        "amazon",
+        "goodreads"
+    ],
+    "number_of_tasks_per_dataset": 5,
+    "agents": {
+        "EnsembleReviewsAgent": {
+            "agent": "EnsembleReviewsAgent",
+            "llm_model": "mistral",
+            "datasets": {
+                "yelp": {
+                    "metrics": {
+                        "preference_estimation": 0.92,
+                        "review_generation": 0.8451252455815113,
+                        "overall_quality": 0.8825626227907557
+                    },
+                    "data_info": {
+                        "evaluated_count": 5,
+                        "original_simulation_count": 5,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "amazon": {
+                    "metrics": {
+                        "preference_estimation": 0.76,
+                        "review_generation": 0.858371413446217,
+                        "overall_quality": 0.8091857067231085
+                    },
+                    "data_info": {
+                        "evaluated_count": 5,
+                        "original_simulation_count": 5,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "goodreads": {
+                    "metrics": {
+                        "preference_estimation": 0.76,
+                        "review_generation": 0.8536668009220914,
+                        "overall_quality": 0.8068334004610457
+                    },
+                    "data_info": {
+                        "evaluated_count": 5,
+                        "original_simulation_count": 5,
+                        "original_ground_truth_count": 400
+                    }
+                }
+            },
+            "aggregated_metrics": {
+                "preference_estimation": 0.8133333333333335,
+                "review_generation": 0.8523878199832732,
+                "overall_quality": 0.8328605766583034
+            }
+        }
+    }
+}

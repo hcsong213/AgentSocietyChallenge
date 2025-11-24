@@ -449,11 +449,12 @@ if __name__ == "__main__":
     from Agents.baseline_agent import BaselineAgent
     from Agents.structured_profile_agent import StructuredProfileAgent
     from Agents.reasoning_loop_agent import ReasoningLoopAgent
+    from Agents.ensemble_reviews_agent import EnsembleReviewsAgent
     
     # Example: Run agent comparison
     print("Running Agent Comparison Experiment...")
     agent_comparison_results = experiment_agent_comparison(
-        agent_classes=[BaselineAgent, StructuredProfileAgent, ReasoningLoopAgent],
+        agent_classes=[BaselineAgent, StructuredProfileAgent, ReasoningLoopAgent, EnsembleReviewsAgent],
         llm_model="mistral",
         datasets=["yelp", "amazon", "goodreads"],  # Start with one dataset for testing
         number_of_tasks=1  # Small number for testing
