@@ -485,11 +485,13 @@ Provide ONLY the JSON object with your alignment analysis.
         - Match the sentiment strength indicated (very positive vs moderately positive)
         - Apply the emotional angle described
         - Follow all style directives (tone, length, punctuation, structure)
+        - Consider user tastes and preferences (likes, dislikes, priorities in product/business/book, etc.)
 
         2. MIMIC THE USER'S AUTHENTIC VOICE:
         - Study the example reviews carefully
         - Copy their exact vocabulary level and sentence patterns
         - CRITICAL: Match their intensity markers (if they say "amazing" don't say "good", if they say "okay" don't say "great")
+        - CRITICAL: Highlight areas of focus the user is likely to place importance upon (e.g. if they prioritize quality of a product over cost, address product quality)
         - Match the strength of their sentiment expression (extreme vs moderate language)
         - Match their grammar style (fragments vs. complete sentences)
         - Use their punctuation patterns (exclamations, ellipses, etc.)
@@ -501,9 +503,9 @@ Provide ONLY the JSON object with your alignment analysis.
         - Include the concrete details from the alignment plan
         - Use vocabulary that appears in the item profile
         - Echo phrases from the similar item review when appropriate
-        - Be specific about this business, not generic
+        - Be specific about this business/book/item, not generic
 
-        Think of it as: The ALIGNMENT PLAN tells you WHAT to say, the USER PROFILE tells you HOW to say it, and the EXAMPLES show you the user's authentic voice to copy.
+        Think of it as: The ALIGNMENT PLAN tells you WHAT to say, the USER PROFILE tells you HOW to say it and WHAT to prioritize, and the EXAMPLES show you the user's authentic voice to copy.
 
         Output format:
         stars: [1.0|2.0|3.0|4.0|5.0]
@@ -548,36 +550,38 @@ ITEM'S PAST REVIEW EXAMPLES:
 CRITIQUE CHECKLIST:
 
 1. STYLE CONSISTENCY:
-   ✓ Does it match user's vocabulary level and sentence structure?
-   ✓ Is formality/casualness consistent with user's style?
-   ✓ Are punctuation patterns similar?
-   ✓ Does length match user's typical length?
-   ✓ Is grammar style consistent?
+   - Does it match user's vocabulary level and sentence structure?
+   - Is formality/casualness consistent with user's style?
+   - Are punctuation patterns similar?
+   - Does length match user's typical length?
+   - Is grammar style consistent?
 
 2. SENTIMENT/EMOTION ALIGNMENT:
-   ✓ Does emotional tone match the rating intensity?
-   ✓ Are the intensity markers appropriate (amazing/great/okay/bad/terrible)?
-   ✓ Does the sentiment strength match the user's typical expression level?
-   ✓ Is sentiment consistent throughout?
-   ✓ Does it convey appropriate emotion for this rating?
-   ✓ Are we using extreme words (amazing/terrible) vs moderate words (good/bad) correctly?
+   - Does emotional tone match the rating intensity?
+   - Are the intensity markers appropriate (amazing/great/okay/bad/terrible)?
+   - Does the sentiment strength match the user's typical expression level?
+   - Is sentiment consistent throughout?
+   - Does it convey appropriate emotion for this rating?
+   - Are we using extreme words (amazing/terrible) vs moderate words (good/bad) correctly?
 
 3. TOPIC/SEMANTIC ALIGNMENT:
-   ✓ Does it mention specific, concrete features of this business?
-   ✓ Does it use relevant vocabulary from item reviews?
-   ✓ Are topics semantically similar to what others mention?
-   ✓ Does it avoid generic phrases?
+   - Does it mention specific, concrete features of this product/book/business?
+   - Does it reflect the personality of the user and highlight their priorities and preferences?
+   - Does it use relevant vocabulary from item reviews?
+   - Are topics semantically similar to what others mention?
+   - Does it avoid generic phrases?
 
 4. COHERENCE:
-   ✓ Is it the right length?
-   ✓ Does it provide meaningful information?
-   ✓ Is it coherent and well-structured?
+   - Is it the right length?
+   - Does it provide meaningful information?
+   - Is it coherent and well-structured?
 
 REFINEMENT STRATEGY:
+- If personality and preferences do not fit: increase the user's identity highlighted in user_profile
 - If style mismatches: adjust vocabulary, structure, formality
 - If sentiment intensity is off: use stronger/weaker intensity markers (amazing→great→good→okay)
 - If sentiment is off: strengthen or soften emotional expression to match rating
-- If topics are generic: add specific business details
+- If topics are generic: add specific item details
 - If length is wrong: condense to match user's typical 2-5 sentence reviews
 - Maintain the rating unless clearly misaligned
 
