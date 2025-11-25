@@ -147,6 +147,7 @@ OUTPUT SCHEMA (JSON format):
   "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
   "grammar_style": "[complete sentences/fragments/run-ons/mix]",
   "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+  "comprehensiveness": "[how thorough/sparse they are in their reviews, whether they address both positives and negatives for positive/negative reviews, etc.]",
 
   "product_focus": ["durability", "accuracy", "functionality", "value", "etc."],
   "purchase_patterns": "[categories/themes/uses shared between reviewed products, if any]"
@@ -190,6 +191,7 @@ OUTPUT SCHEMA (JSON format):
   "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
   "grammar_style": "[complete sentences/fragments/run-ons/mix]",
   "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+  "comprehensiveness": "[how thorough/sparse they are in their reviews, whether they address both positives and negatives for positive/negative reviews, etc.]",
 
   "literary_taste": ["genres", "favorite authors", "themes", "etc."],
   "interpretive_focus": ["plot", "characters", "world-building", "prose", "etc."],
@@ -248,6 +250,7 @@ OUTPUT SCHEMA (JSON format):
   "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
   "grammar_style": "[complete sentences/fragments/run-ons/mix]",
   "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+  "comprehensiveness": "[how thorough/sparse they are in their reviews, whether they address both positives and negatives for positive/negative reviews, etc.]",
 
   "business_focus": ["service", "ambiance", "facility quality/availability", "food quality", "price sensitivity", "parking availability", "etc."],
   "taste_patterns": "[cuisines/establishment styles/themes shared between reviewed businesses, if any]"
@@ -290,9 +293,12 @@ OUTPUT SCHEMA (JSON format):
   "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
   "grammar_style": "[complete sentences/fragments/run-ons/mix]",
   "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+  "comprehensiveness": "[how thorough/sparse they are in their reviews, whether they address both positives and negatives for positive/negative reviews, etc.]",
+
   "focus_aspects": {{
     "general": ["what they typically comment on"]
   }},
+
   "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
   "typical_length_words": [average word count],
   "rating_patterns": {{
@@ -417,6 +423,7 @@ Analyze the following aspects explicitly:
    - How would the user express their opinion (tone, formality, emotion)?
    - What sentence structure and length should be used?
    - What punctuation and grammar patterns to apply?
+   - How comprehensive should the review be, in terms of detail, addressing pros and cons, etc.?
 
 OUTPUT SCHEMA:
 {{
@@ -428,8 +435,8 @@ OUTPUT SCHEMA:
     "aspect2": "[positive/negative/neutral] - why"
   }},
   "specific_vocabulary_to_use": ["word1", "phrase2", "term3"],
-  "intensity_words_to_use": ["specific intensity markers matching user's style: amazing/great/okay/terrible/etc."],
-  "concrete_details_to_include": ["specific menu item", "specific service detail", "etc."],
+  "intensity_words_to_use": ["specific intensity markers matching user's style: amazing/great/okay/terrible/somewhat/etc."],
+  "concrete_details_to_include": ["specific menu item", "specific service detail", "specific use of literary device", "etc."],
   "emotional_angle": "how user would feel about this experience",
   "sentiment_strength": "[how strongly to express the sentiment: very positive/moderately positive/slightly positive/etc.]",
   "style_directives": {{
@@ -437,7 +444,8 @@ OUTPUT SCHEMA:
     "length": "[X sentences or Y words]",
     "punctuation": "[heavy/minimal/etc.]",
     "structure": "[fragments/complete sentences/etc.]"
-  }}
+  }},
+  "comprehensiveness": "[how wholistic, detailed, positive AND negative the reviewer is]"
 }}
 
 Provide ONLY the JSON object with your alignment analysis.
@@ -497,7 +505,10 @@ Provide ONLY the JSON object with your alignment analysis.
         - Use their punctuation patterns (exclamations, ellipses, etc.)
         - Mirror their emotional expression style
         - Match their typical review length (count words/sentences in examples)
-        - KEEP IT CONCISE: Most reviews are 2-5 sentences, not paragraphs
+        - KEEP IT CONCISE: Most reviews are 2-5 sentences, not paragraphs (though if the reviewer writes paragraphs, emulate)
+        - Mirror their comprehensiveness:
+            * If they only focus on positives for positive reviews (or negatives for negative ones), only use those
+            * If the review is extemely sparse or extremely detailed, emulate
 
         3. ENSURE SEMANTIC/TOPIC ALIGNMENT:
         - Include the concrete details from the alignment plan
