@@ -382,7 +382,7 @@ REFINEMENT STRATEGY:
 - If length is wrong: condense to match user's typical 2-5 sentence reviews
 - Maintain the rating unless clearly misaligned
 
-OUTPUT FORMAT:
+OUTPUT FORMAT (OUTPUT ONLY THE FOLLOWING):
 Critique: [What needs refinement, if anything - be specific]
 Refined Review: [The improved review, or original if no changes needed]
 """

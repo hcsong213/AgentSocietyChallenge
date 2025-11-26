@@ -99,6 +99,13 @@ class EnsembleReviewsAgent(SimulationAgent):
             prompt = f"""Generate THREE distinct review drafts for this user-item pair.
 
 CONTEXT:
+
+USER PROFILE:
+{user_profile_json if user_profile_json else "No user profile available"}
+
+ITEM PROFILE:
+{item_profile_json if item_profile_json else "No item profile available"}
+
 User examples:
 {user_examples}
 
