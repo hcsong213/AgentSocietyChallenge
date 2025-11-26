@@ -9,6 +9,11 @@ from websocietysimulator import Simulator
 from websocietysimulator.agent import SimulationAgent
 from websocietysimulator.llm import LLMBase
 from websocietysimulator.agent.modules.memory_modules import MemoryDILU
+from Agents.agent_utils import (
+    build_user_profile, build_item_profile, refine_review,
+    sample_diverse_reviews, format_review_samples,
+    parse_review_output, parse_refinement_output
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ensemble_reviews_agent")
@@ -23,9 +28,11 @@ class EnsembleReviewsAgent(SimulationAgent):
     plus a critical synthesis.
     """
 
-    def __init__(self, llm: LLMBase):
+    def __init__(self, llm: LLMBase, enable_refinement: bool = True, enable_profiling: bool = True):
         super().__init__(llm=llm)
         self.memory = MemoryDILU(llm=llm)
+        self.enable_refinement = enable_refinement
+        self.enable_profiling = enable_profiling
 
     def workflow(self) -> Dict[str, Any]:
         try:
@@ -42,8 +49,19 @@ class EnsembleReviewsAgent(SimulationAgent):
             item_reviews = self.interaction_tool.get_reviews(item_id=item_id) or []
             logger.info(f"Fetched {len(user_reviews)} user reviews and {len(item_reviews)} item reviews")
 
+            # Conditional profiling based on toggle
+            if self.enable_profiling:
+                user_profile_json = build_user_profile(self.llm, user_reviews, user_profile)
+                item_profile_json = build_item_profile(self.llm, item_reviews, item_info)
+                logger.info("User and item profiles built")
+            else:
+                user_profile_json = json.dumps({"note": "Profiling disabled for ablation study"})
+                item_profile_json = json.dumps({"note": "Profiling disabled for ablation study"})
+                logger.info("Skipping profiling (disabled for ablation study)")
+
             # Generate three stylistically distinct drafts
-            drafts = self._generate_three_reviews(user_reviews, item_info, item_reviews)
+            drafts = self._generate_three_reviews(user_reviews, item_info, item_reviews, 
+                                                   user_profile_json, item_profile_json)
             logger.info(f"Generated {len(drafts)} candidate reviews")
 
             # Critic synthesizes them into a single recommended review
@@ -51,8 +69,13 @@ class EnsembleReviewsAgent(SimulationAgent):
             logger.info(f"Critic produced stars={final.get('stars')} review length={len(final.get('review', ''))}")
 
             # Final lightweight refinement to match user's voice
-            refined = self._simple_refinement(final, user_reviews, item_reviews)
-            logger.info("Refinement complete. Returning final review.")
+            if self.enable_refinement:
+                refined = refine_review(self.llm, final, user_profile_json, item_profile_json, 
+                                      user_reviews, item_reviews)
+                logger.info("Refinement complete. Returning final review.")
+            else:
+                refined = final
+                logger.info("Skipping refinement (disabled for ablation study)")
 
             return refined
 
@@ -60,12 +83,13 @@ class EnsembleReviewsAgent(SimulationAgent):
             logger.exception("EnsembleReviewsAgent workflow failed: %s", e)
             return {"stars": 0.0, "review": ""}
 
-    def _generate_three_reviews(self, user_reviews: List[Dict], item_info: Dict, item_reviews: List[Dict]) -> List[Dict[str, Any]]:
+    def _generate_three_reviews(self, user_reviews: List[Dict], item_info: Dict, item_reviews: List[Dict],
+                               user_profile_json: str = None, item_profile_json: str = None) -> List[Dict[str, Any]]:
         """Ask the LLM to produce three different review types in one call."""
         try:
             logger.info("Generating three stylistically distinct reviews")
-            user_examples = self._format_review_samples(user_reviews, max_samples=3)
-            item_examples = self._format_review_samples(item_reviews, max_samples=3)
+            user_examples = format_review_samples(user_reviews, max_samples=3)
+            item_examples = format_review_samples(item_reviews, max_samples=3)
             item_details = json.dumps(item_info, ensure_ascii=False)[:400]
 
             # Extract key details from user and item data
@@ -157,7 +181,7 @@ Ensure the reviews explicitly reference key user and item details where relevant
         """Given multiple drafts, ask the LLM to critique and synthesize a final review."""
         try:
             logger.info("Starting critique and aggregation of drafts")
-            user_examples = self._format_review_samples(user_reviews, max_samples=3)
+            user_examples = format_review_samples(user_reviews, max_samples=3)
             item_details = json.dumps(item_info, ensure_ascii=False)[:400]
 
             drafts_text = "\n\n".join([f"Draft {i+1} (Type: {d.get('type')}):\nstars: {d.get('stars')}\nreview: {d.get('review')}" for i,d in enumerate(drafts)])
@@ -203,95 +227,9 @@ Make the final review concise but specific, and prefer concrete details from the
 
             # Fallback: parse with existing parser
             logger.warning("Failed to parse final review block, using fallback parser")
-            parsed = self._parse_review_output(response)
+            parsed = parse_review_output(response)
             return {"stars": parsed.get("stars", 3.0), "review": parsed.get("review", "")}
 
         except Exception as e:
             logger.exception("Failed to critique and aggregate drafts: %s", e)
             return {"stars": 0.0, "review": ""}
-
-    def _simple_refinement(self, draft: Dict[str, Any], user_reviews: List[Dict], item_reviews: List[Dict]) -> Dict[str, Any]:
-        """Lightweight refinement to adjust style to user's voice.
-
-        This step verifies style/vocabulary alignment with a quick LLM pass.
-        """
-        review_text = draft.get("review", "")
-        stars = draft.get("stars", 3.0)
-
-        user_examples = self._format_review_samples(user_reviews, max_samples=3)
-        item_examples = self._format_review_samples(item_reviews, max_samples=2)
-
-        prompt = f"""Refine the following review so it matches the user's voice in the examples.
-
-User examples:
-{user_examples}
-
-Item examples:
-{item_examples}
-
-Generated review:
-Rating: {stars}
-Review: {review_text}
-
-If the review already matches the user's voice closely, return it unchanged. Otherwise, produce a revised review that keeps the same rating but better matches tone, vocabulary, and length of the user examples.
-
-Output format:
-Refined Review: [the review text]
-"""
-
-        messages = [{"role": "user", "content": prompt}]
-        response = self.llm(messages=messages, temperature=0.1, max_tokens=400)
-
-        refined_match = re.search(r"Refined Review:\s*(.+)$", response, re.IGNORECASE | re.DOTALL)
-        if refined_match:
-            refined = refined_match.group(1).strip().strip('"\'')
-            draft["review"] = refined
-            return draft
-
-        # fallback
-        return draft
-
-    def _parse_review_output(self, text: str) -> Dict[str, Any]:
-        stars = 3.0
-        review = ""
-        try:
-            stars_match = re.search(r"stars\s*[:=]\s*\[?\s*([0-9]+(?:\.[0-9]+)?)\s*\]?", text, re.IGNORECASE)
-            if stars_match:
-                stars = float(stars_match.group(1))
-                stars = max(1.0, min(5.0, stars))
-
-            review_match = re.search(r"review\s*[:=]\s*(.+?)(?=\n\n|\Z)", text, re.IGNORECASE | re.DOTALL)
-            if review_match:
-                review = review_match.group(1).strip()
-            else:
-                # fallback: take last paragraph
-                review = text.strip().split('\n')[-1].strip()
-        except Exception:
-            review = text.strip()
-
-        return {"stars": stars, "review": review}
-
-    def _sample_diverse_reviews(self, reviews: List[Dict], max_samples: int = 5) -> List[Dict]:
-        if len(reviews) <= max_samples:
-            return reviews
-        by_rating = {}
-        for r in reviews:
-            rating = r.get("stars", 3.0)
-            by_rating.setdefault(rating, []).append(r)
-        sampled = []
-        for rating in sorted(by_rating.keys()):
-            sampled.extend(by_rating[rating][:max(1, max_samples // len(by_rating))])
-            if len(sampled) >= max_samples:
-                break
-        return sampled[:max_samples]
-
-    def _format_review_samples(self, reviews: List[Dict], max_samples: int = 3) -> str:
-        if not reviews:
-            return "No past reviews available."
-        sampled = self._sample_diverse_reviews(reviews, max_samples=max_samples)
-        formatted = []
-        for i, review in enumerate(sampled, 1):
-            stars = review.get("stars", "N/A")
-            text = review.get("text", "")
-            formatted.append(f"Example {i}:\nRating: {stars} stars\nReview: {text}")
-        return "\n\n".join(formatted)

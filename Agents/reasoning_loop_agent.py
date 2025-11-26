@@ -8,6 +8,11 @@ from typing import Dict, Any, List
 from websocietysimulator import Simulator
 from websocietysimulator.agent import SimulationAgent
 from websocietysimulator.llm import LLMBase
+from Agents.agent_utils import (
+    build_user_profile, build_item_profile, refine_review,
+    sample_diverse_reviews, format_review_samples,
+    parse_review_output, parse_refinement_output
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("reasoning_loop_agent")
@@ -35,10 +40,11 @@ class ReasoningLoopAgent(SimulationAgent):
 
             # Conditional profiling based on toggle
             if self.enable_profiling:
-                user_analysis = self._analyze_user_reviews(user_reviews)
+                user_profile_raw = self.interaction_tool.get_user(user_id=user_id)
+                user_analysis = build_user_profile(self.llm, user_reviews, user_profile_raw)
                 logger.info(f"User analysis: {user_analysis[:100]}...")
 
-                item_analysis = self._analyze_item_reviews(item_reviews)
+                item_analysis = build_item_profile(self.llm, item_reviews, item_info)
                 logger.info(f"Item analysis: {item_analysis[:100]}...")
             else:
                 user_analysis = "Profiling disabled for ablation study."
@@ -53,7 +59,7 @@ class ReasoningLoopAgent(SimulationAgent):
 
             # Conditional refinement based on toggle
             if self.enable_refinement:
-                final = self._simple_refinement(draft, user_analysis)
+                final = refine_review(self.llm, draft, user_analysis, item_analysis, user_reviews, item_reviews)
             else:
                 logger.info("Skipping refinement (disabled for ablation study)")
                 final = draft
@@ -63,60 +69,6 @@ class ReasoningLoopAgent(SimulationAgent):
         except Exception as e:
             logger.exception("ReasoningLoopAgent workflow failed: %s", e)
             return {"stars": 0.0, "review": ""}
-
-    def _analyze_user_reviews(self, user_reviews: List[Dict]) -> str:
-        if not user_reviews:
-            return "No user review history available."
-        
-        sampled = self._sample_diverse_reviews(user_reviews, max_samples=5)
-        reviews_text = "\n\n".join([
-            f"Rating: {r.get('stars', 'N/A')}\nReview: {r.get('text', '')[:500]}"
-            for r in sampled
-        ])
-        
-        prompt = f"""Analyze this user's review patterns. Provide a concise summary covering:
-1. Rating tendency (harsh/generous/moderate, average rating)
-2. Review style (formal/casual, length, tone, linguistic patterns)
-3. Lifestyle/preferences (are they a professional, student, parent? any lifestyle clues?)
-4. Item preferences (what do they value most? what do they criticize?)
-5. Personality traits evident in reviews
-
-User's review samples:
-{reviews_text}
-
-Keep response under 200 words, be specific and data-driven.
-"""
-        
-        messages = [{"role": "user", "content": prompt}]
-        return self.llm(messages=messages, temperature=0.0, max_tokens=300).strip()
-
-    def _analyze_item_reviews(self, item_reviews: List[Dict]) -> str:
-        if not item_reviews:
-            return "No existing reviews for this item."
-        
-        # Sample diverse reviews
-        sampled = self._sample_diverse_reviews(item_reviews, max_samples=5)
-        reviews_text = "\n\n".join([
-            f"Rating: {r.get('stars', 'N/A')}\nReview: {r.get('text', '')[:300]}"
-            for r in sampled
-        ])
-        
-        prompt = f"""Analyze existing reviews for this item. Provide a concise summary covering:
-1. Overall sentiment and average rating
-2. Most commonly mentioned benefits/pros (with specific vocabulary used)
-3. Most commonly mentioned issues/cons (with specific vocabulary used)
-4. Emotional tone patterns (enthusiastic, disappointed, neutral, etc.)
-5. Common phrases and vocabulary that appear across reviews
-6. Notable thematic patterns
-
-Item reviews:
-{reviews_text}
-
-Keep response under 250 words, be specific about patterns and exact terminology used.
-"""
-        
-        messages = [{"role": "user", "content": prompt}]
-        return self.llm(messages=messages, temperature=0.0, max_tokens=300).strip()
 
     def _reasoning_loop(self, user_analysis: str, item_analysis: str, 
                        user_profile: Dict, item_info: Dict) -> List[Dict[str, str]]:
@@ -299,7 +251,7 @@ NOW PROVIDE YOUR REASONING STEP (output 3 lines: Thought, Insight, Action):
         # Get sample past user reviews for style reference
         user_id = self.task.get("user_id")
         user_reviews = self.interaction_tool.get_reviews(user_id=user_id) or []
-        user_review_samples = self._format_review_samples(user_reviews, max_samples=3)
+        user_review_samples = format_review_samples(user_reviews, max_samples=3)
  
         # Get concrete item details for topic alignment
         item_id = self.task.get("item_id")
@@ -366,192 +318,4 @@ review: [your review text - written in the USER'S style from examples, containin
         messages = [{"role": "user", "content": prompt}]
         response = self.llm(messages=messages, temperature=0.1, max_tokens=400)  # Lower temperature for more deterministic, aligned output
         
-        return self._parse_review_output(response)
-
-    def _simple_refinement(self, draft: Dict[str, Any], user_analysis: str) -> Dict[str, Any]:        
-        review_text = draft.get("review", "")
-        stars = draft.get("stars", 3.0) # Default to 3 stars if missing
-        
-        # Get user and item context for alignment checking
-        user_id = self.task.get("user_id")
-        item_id = self.task.get("item_id")
-        
-        user_reviews = self.interaction_tool.get_reviews(user_id=user_id) or []
-        item_reviews = self.interaction_tool.get_reviews(item_id=item_id) or []
-        item_info = self.interaction_tool.get_item(item_id=item_id)
-        
-        # Sample user and item reviews for comparison
-        user_review_samples = self._format_review_samples(user_reviews, max_samples=3)
-        item_review_samples = self._format_review_samples(item_reviews, max_samples=3)
-        
-        item_details = json.dumps(item_info, ensure_ascii=False)[:400]
-        
-        prompt = f"""You are refining a generated review to ensure it meets quality standards.
-
-GENERATED REVIEW TO REFINE:
-Rating: {stars} stars
-Review: "{review_text}"
-
-USER'S PAST REVIEW EXAMPLES (for style/tone reference):
-{user_review_samples}
-
-ITEM'S PAST REVIEW EXAMPLES (for topic/vocabulary reference):
-{item_review_samples}
-
-BUSINESS DETAILS:
-{item_details}
-
-USER ANALYSIS SUMMARY:
-{user_analysis}
-
-YOUR TASK: Analyze and refine the generated review to ensure:
-
-1. STYLE CONSISTENCY (compare with user's examples):
-   - Does it match the user's vocabulary level and sentence structure?
-   - Is the formality/casualness consistent with user's style?
-   - Are punctuation patterns similar (exclamations, ellipses, etc.)?
-   - Does review length match user's typical length?
-   - Is the grammar style consistent (fragments vs. complete sentences)?
-
-2. SENTIMENT/EMOTION ALIGNMENT:
-   - Does the emotional tone match the rating? (e.g., 5 stars = enthusiastic, 1 star = disappointed)
-   - Is the sentiment consistent throughout the review?
-   - Does it convey appropriate emotional intensity for this rating?
-
-3. TOPIC/SEMANTIC ALIGNMENT (compare with item reviews):
-   - Does it mention specific, concrete features of THIS business?
-   - Does it use relevant vocabulary that appears in other reviews of this item?
-   - Are the topics discussed semantically similar to what others mention?
-   - Does it avoid generic phrases in favor of business-specific details?
-
-4. COHERENCE AND COMPLETENESS:
-   - Is the review too brief or too verbose compared to user's style?
-   - Does it provide meaningful information about the experience?
-   - Is it coherent and well-structured?
-
-REFINEMENT STRATEGY:
-- If style doesn't match user's examples: adjust vocabulary, sentence structure, formality
-- If sentiment/emotion is off: strengthen or soften emotional expression to match rating
-- If topics are too generic: add specific business details and vocabulary from item reviews
-- If length is wrong: expand with specifics or condense while keeping key points
-- Maintain the original rating ({stars} stars) unless it's clearly misaligned
-
-OUTPUT FORMAT:
-Analysis: [Brief analysis of what needs refinement - 1-2 sentences]
-Refined Review: [The improved review text that addresses alignment issues]
-
-If the review is already excellent and needs no changes, output:
-Analysis: Review is well-aligned with user style, appropriate sentiment, and specific topics.
-Refined Review: {review_text}
-"""
-        
-        messages = [{"role": "user", "content": prompt}]
-        response = self.llm(messages=messages, temperature=0.1, max_tokens=500)
-        
-        # Parse the refinement response
-        refined_review = self._parse_refinement_output(response, original_review=review_text)
-        
-        logger.info(f"Refinement: {refined_review[:100]}...")
-        draft["review"] = refined_review
-        
-        return draft
-    
-    def _parse_refinement_output(self, text: str, original_review: str) -> str:
-        try:
-            # Look for "Refined Review:" section
-            refined_match = re.search(r"Refined Review:\s*(.+?)(?=\n\n|\Z)", text, re.IGNORECASE | re.DOTALL)
-            if refined_match:
-                refined = refined_match.group(1).strip()
-                # Remove quotes if present
-                refined = refined.strip('"\'')
-                return refined if refined else original_review
-            
-            # Fallback: look for lines starting with the review
-            lines = text.split('\n')
-            for i, line in enumerate(lines):
-                if line.lower().startswith('refined review:'):
-                    # Get everything after "Refined Review:"
-                    review_start = i
-                    review_parts = [line.split(':', 1)[1].strip() if ':' in line else '']
-                    # Collect subsequent lines that are part of the review
-                    for j in range(i + 1, len(lines)):
-                        if lines[j].strip() and not lines[j].lower().startswith('analysis'):
-                            review_parts.append(lines[j].strip())
-                        elif lines[j].strip():
-                            break
-                    refined = ' '.join(review_parts).strip('"\'')
-                    return refined if refined else original_review
-            
-            # If parsing fails, return original
-            logger.warning("Could not parse refinement output, using original review")
-            return original_review
-            
-        except Exception as e:
-            logger.warning(f"Refinement parse error: {e}, using original review")
-            return original_review
-
-    def _parse_review_output(self, text: str) -> Dict[str, Any]:
-        stars = 3.0  # Default fallback
-        review = ""
-        
-        try:
-            # Parse stars
-            stars_match = re.search(r"stars\s*[:=]\s*\[?\s*([0-9]+(?:\.[0-9]+)?)\s*\]?", text, re.IGNORECASE)
-            if stars_match:
-                stars = float(stars_match.group(1))
-                stars = max(1.0, min(5.0, stars))
-            
-            # Parse review
-            review_match = re.search(r"review\s*[:=]\s*(.+?)(?=\n\n|\Z)", text, re.IGNORECASE | re.DOTALL)
-            if review_match:
-                review = review_match.group(1).strip()
-            elif not review_match:
-                # Fallback: look line by line
-                for line in text.split("\n"):
-                    if line.lower().startswith("review:"):
-                        review = line.split(":", 1)[1].strip()
-                        break
-            
-            # Final fallback
-            if not review:
-                review = text.strip()
-        
-        except Exception as e:
-            logger.warning(f"Parse error: {e}")
-            review = text if text else ""
-        
-        return {"stars": stars, "review": review}
-
-    def _sample_diverse_reviews(self, reviews: List[Dict], max_samples: int = 5) -> List[Dict]:
-        if len(reviews) <= max_samples:
-            return reviews
-        
-        # Try to get diverse ratings
-        by_rating = {}
-        for r in reviews:
-            rating = r.get("stars", 3.0)
-            if rating not in by_rating:
-                by_rating[rating] = []
-            by_rating[rating].append(r)
-        
-        # Sample from each rating bucket
-        sampled = []
-        for rating in sorted(by_rating.keys()):
-            sampled.extend(by_rating[rating][:max(1, max_samples // len(by_rating))])
-            if len(sampled) >= max_samples:
-                break
-        
-        return sampled[:max_samples]
-
-    def _format_review_samples(self, reviews: List[Dict], max_samples: int = 3) -> str:
-        if not reviews:
-            return "No past reviews available."
-        
-        sampled = self._sample_diverse_reviews(reviews, max_samples=max_samples)
-        formatted = []
-        for i, review in enumerate(sampled, 1):
-            stars = review.get("stars", "N/A")
-            text = review.get("text", "")[:700]  # Limit length
-            formatted.append(f"Example {i}:\nRating: {stars} stars\nReview: {text}")
-        
-        return "\n\n".join(formatted)
+        return parse_review_output(response)
