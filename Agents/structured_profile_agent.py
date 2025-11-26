@@ -95,6 +95,17 @@ class StructuredProfileAgent(SimulationAgent):
 
     def _build_user_profile(self, user_reviews: List[Dict], user_profile_raw: Dict) -> str:
         """Build comprehensive structured user profile with review sampling."""
+
+        # Detect review source (amazon / goodreads / yelp). Fall back to generic.
+        source = None
+        try:
+            source = user_profile_raw.get("source", None)
+            if not source and user_reviews:
+                source = user_reviews[0].get("source", None)
+        except:
+            source = None
+        source = (source or "").lower()
+
         if not user_reviews:
             return json.dumps({
                 "writing_tone": "neutral",
@@ -111,8 +122,10 @@ class StructuredProfileAgent(SimulationAgent):
             f"Rating: {r.get('stars', 'N/A')} stars\nReview: {r.get('text', '')}"
             for r in sampled
         ])
-        
-        prompt = f"""Analyze this user's review patterns and create a STRUCTURED PROFILE.
+
+        if source == "amazon":
+            prompt = f"""
+Analyze this Amazon user's review patterns and create a STRUCTURED PROFILE.
 
 User's review samples ({len(sampled)} reviews):
 {reviews_text}
@@ -134,10 +147,12 @@ OUTPUT SCHEMA (JSON format):
   "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
   "grammar_style": "[complete sentences/fragments/run-ons/mix]",
   "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
-  "focus_aspects": {{
-    "restaurants": ["service", "food quality", "ambiance", "etc."],
-    "general": ["what they typically comment on"]
-  }},
+  "comprehensiveness": "[how thorough/sparse they are in their reviews, whether they address both positives and negatives for positive/negative reviews, etc.]",
+
+  "product_focus": ["durability", "accuracy", "functionality", "value", "etc."],
+  "purchase_patterns": "[categories/themes/uses shared between reviewed products, if any]"
+  "value_sensitivity": "[frugal/high spender/etc.]",
+
   "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
   "typical_length_words": [average word count],
   "rating_patterns": {{
@@ -145,13 +160,159 @@ OUTPUT SCHEMA (JSON format):
     "tendency": "[harsh/generous/moderate]",
     "distribution": "[mostly 5s and 1s / balanced / etc.]"
   }},
-  "personality_traits": ["descriptors of their personality in reviews"],
+  "personality_traits": ["descriptors of their personality inferred from reviews"],
   "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
 }}
 
 Provide ONLY the JSON object, no additional text.
 """
-        
+            
+        elif source == "goodreads":
+            prompt = f"""
+Analyze this Goodreads user's review patterns and create a STRUCTURED PROFILE.
+
+User's review samples ({len(sampled)} reviews):
+{reviews_text}
+
+Additional user info:
+{json.dumps(user_profile_raw, ensure_ascii=False)}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "user_name": "[user's name if available in profile, otherwise 'Unknown']",
+  "writing_tone": "[casual/formal/sarcastic/enthusiastic/balanced/etc.]",
+  "writing_tone_details": "[2-3 sentence description of their voice and style]",
+  "sentiment_tendency": "[positive/neutral/negative/mixed]",
+  "sentiment_details": "[how generous or harsh they are with ratings]",
+  "vocabulary_patterns": ["list", "of", "characteristic", "words", "and", "phrases", "they", "use"],
+  "intensity_markers": ["words that amplify emotion: amazing/terrible/extremely/very/somewhat/okay/etc."],
+  "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
+  "grammar_style": "[complete sentences/fragments/run-ons/mix]",
+  "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+  "comprehensiveness": "[how thorough/sparse they are in their reviews, whether they address both positives and negatives for positive/negative reviews, etc.]",
+
+  "literary_taste": ["genres", "favorite authors", "themes", "etc."],
+  "interpretive_focus": ["plot", "characters", "world-building", "prose", "etc."],
+
+  "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
+  "typical_length_words": [average word count],
+  "rating_patterns": {{
+    "average": [average star rating],
+    "tendency": "[harsh/generous/moderate]",
+    "distribution": "[mostly 5s and 1s / balanced / etc.]"
+  }},
+  "personality_traits": ["descriptors of their personality inferred from reviews"],
+  "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
+            
+        elif source == "yelp":
+
+            yelp_info = {
+                "user_id": user_profile_raw.get("user_id"),
+                "name": user_profile_raw.get("name", "Unknown"),
+                "review_count": user_profile_raw.get("review_count"),
+                "useful": user_profile_raw.get("useful"),
+                "funny": user_profile_raw.get("funny"),
+                "cool": user_profile_raw.get("cool")
+            }
+
+            prompt = f"""
+Analyze this Yelp user's review patterns and create a STRUCTURED PROFILE.
+
+User's review samples ({len(sampled)} reviews):
+{reviews_text}
+
+Additional user info:
+{json.dumps(user_profile_raw, ensure_ascii=False)}
+
+Also consider the user's metadata as influencing factors:
+- review_count (weighting factor for average behavior): {yelp_info['review_count']}
+- useful votes (tendency to write helpful reviews): {yelp_info['useful']}
+- funny votes (tendency toward humor in reviews): {yelp_info['funny']}
+- cool votes (coolness/relatability): {yelp_info['cool']}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "user_name": "[user's name if available in profile, otherwise 'Unknown']",
+  "writing_tone": "[casual/formal/sarcastic/enthusiastic/balanced/etc.]",
+  "writing_tone_details": "[2-3 sentence description of their voice and style]",
+  "sentiment_tendency": "[positive/neutral/negative/mixed]",
+  "sentiment_details": "[how generous or harsh they are with ratings]",
+  "vocabulary_patterns": ["list", "of", "characteristic", "words", "and", "phrases", "they", "use"],
+  "intensity_markers": ["words that amplify emotion: amazing/terrible/extremely/very/somewhat/okay/etc."],
+  "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
+  "grammar_style": "[complete sentences/fragments/run-ons/mix]",
+  "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+  "comprehensiveness": "[how thorough/sparse they are in their reviews, whether they address both positives and negatives for positive/negative reviews, etc.]",
+
+  "business_focus": ["service", "ambiance", "facility quality/availability", "food quality", "price sensitivity", "parking availability", "etc."],
+  "taste_patterns": "[cuisines/establishment styles/themes shared between reviewed businesses, if any]"
+
+  "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
+  "typical_length_words": [average word count],
+  "rating_patterns": {{
+    "average": [average star rating],
+    "tendency": "[harsh/generous/moderate]",
+    "distribution": "[mostly 5s and 1s / balanced / etc.]"
+  }},
+  "personality_traits": ["descriptors of their personality inferred from reviews"],
+  "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
+            
+        else:
+            prompt = f"""
+Analyze this user's review patterns and create a GENERIC STRUCTURED PROFILE.
+
+User's review samples ({len(sampled)} reviews):
+{reviews_text}
+
+Additional user info:
+{json.dumps(user_profile_raw, ensure_ascii=False)}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "user_name": "[user's name if available in profile, otherwise 'Unknown']",
+  "writing_tone": "[casual/formal/sarcastic/enthusiastic/balanced/etc.]",
+  "writing_tone_details": "[2-3 sentence description of their voice and style]",
+  "sentiment_tendency": "[positive/neutral/negative/mixed]",
+  "sentiment_details": "[how generous or harsh they are with ratings]",
+  "vocabulary_patterns": ["list", "of", "characteristic", "words", "and", "phrases", "they", "use"],
+  "intensity_markers": ["words that amplify emotion: amazing/terrible/extremely/very/somewhat/okay/etc."],
+  "sentiment_intensity": "[how strongly they express opinions: extreme/moderate/mild]",
+  "grammar_style": "[complete sentences/fragments/run-ons/mix]",
+  "punctuation_style": "[heavy exclamations/minimal punctuation/ellipses/etc.]",
+  "comprehensiveness": "[how thorough/sparse they are in their reviews, whether they address both positives and negatives for positive/negative reviews, etc.]",
+
+  "focus_aspects": {{
+    "general": ["what they typically comment on"]
+  }},
+
+  "typical_length": "[very short (1 sentence)/short (2-3 sentences)/medium (4-6)/long (7+)]",
+  "typical_length_words": [average word count],
+  "rating_patterns": {{
+    "average": [average star rating],
+    "tendency": "[harsh/generous/moderate]",
+    "distribution": "[mostly 5s and 1s / balanced / etc.]"
+  }},
+  "personality_traits": ["descriptors of their personality inferred from reviews"],
+  "emotional_expression": "[reserved/enthusiastic/dramatic/matter-of-fact]"
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
+
         messages = [{"role": "user", "content": prompt}]
         response = self.llm(messages=messages, temperature=0.0, max_tokens=800).strip()
         
@@ -262,6 +423,7 @@ Analyze the following aspects explicitly:
    - How would the user express their opinion (tone, formality, emotion)?
    - What sentence structure and length should be used?
    - What punctuation and grammar patterns to apply?
+   - How comprehensive should the review be, in terms of detail, addressing pros and cons, etc.?
 
 OUTPUT SCHEMA:
 {{
@@ -273,8 +435,8 @@ OUTPUT SCHEMA:
     "aspect2": "[positive/negative/neutral] - why"
   }},
   "specific_vocabulary_to_use": ["word1", "phrase2", "term3"],
-  "intensity_words_to_use": ["specific intensity markers matching user's style: amazing/great/okay/terrible/etc."],
-  "concrete_details_to_include": ["specific menu item", "specific service detail", "etc."],
+  "intensity_words_to_use": ["specific intensity markers matching user's style: amazing/great/okay/terrible/somewhat/etc."],
+  "concrete_details_to_include": ["specific menu item", "specific service detail", "specific use of literary device", "etc."],
   "emotional_angle": "how user would feel about this experience",
   "sentiment_strength": "[how strongly to express the sentiment: very positive/moderately positive/slightly positive/etc.]",
   "style_directives": {{
@@ -282,7 +444,8 @@ OUTPUT SCHEMA:
     "length": "[X sentences or Y words]",
     "punctuation": "[heavy/minimal/etc.]",
     "structure": "[fragments/complete sentences/etc.]"
-  }}
+  }},
+  "comprehensiveness": "[how wholistic, detailed, positive AND negative the reviewer is]"
 }}
 
 Provide ONLY the JSON object with your alignment analysis.
@@ -330,25 +493,30 @@ Provide ONLY the JSON object with your alignment analysis.
         - Match the sentiment strength indicated (very positive vs moderately positive)
         - Apply the emotional angle described
         - Follow all style directives (tone, length, punctuation, structure)
+        - Consider user tastes and preferences (likes, dislikes, priorities in product/business/book, etc.)
 
         2. MIMIC THE USER'S AUTHENTIC VOICE:
         - Study the example reviews carefully
         - Copy their exact vocabulary level and sentence patterns
         - CRITICAL: Match their intensity markers (if they say "amazing" don't say "good", if they say "okay" don't say "great")
+        - CRITICAL: Highlight areas of focus the user is likely to place importance upon (e.g. if they prioritize quality of a product over cost, address product quality)
         - Match the strength of their sentiment expression (extreme vs moderate language)
         - Match their grammar style (fragments vs. complete sentences)
         - Use their punctuation patterns (exclamations, ellipses, etc.)
         - Mirror their emotional expression style
         - Match their typical review length (count words/sentences in examples)
-        - KEEP IT CONCISE: Most reviews are 2-5 sentences, not paragraphs
+        - KEEP IT CONCISE: Most reviews are 2-5 sentences, not paragraphs (though if the reviewer writes paragraphs, emulate)
+        - Mirror their comprehensiveness:
+            * If they only focus on positives for positive reviews (or negatives for negative ones), only use those
+            * If the review is extemely sparse or extremely detailed, emulate
 
         3. ENSURE SEMANTIC/TOPIC ALIGNMENT:
         - Include the concrete details from the alignment plan
         - Use vocabulary that appears in the item profile
         - Echo phrases from the similar item review when appropriate
-        - Be specific about this business, not generic
+        - Be specific about this business/book/item, not generic
 
-        Think of it as: The ALIGNMENT PLAN tells you WHAT to say, the USER PROFILE tells you HOW to say it, and the EXAMPLES show you the user's authentic voice to copy.
+        Think of it as: The ALIGNMENT PLAN tells you WHAT to say, the USER PROFILE tells you HOW to say it and WHAT to prioritize, and the EXAMPLES show you the user's authentic voice to copy.
 
         Output format:
         stars: [1.0|2.0|3.0|4.0|5.0]
@@ -393,36 +561,38 @@ ITEM'S PAST REVIEW EXAMPLES:
 CRITIQUE CHECKLIST:
 
 1. STYLE CONSISTENCY:
-   ✓ Does it match user's vocabulary level and sentence structure?
-   ✓ Is formality/casualness consistent with user's style?
-   ✓ Are punctuation patterns similar?
-   ✓ Does length match user's typical length?
-   ✓ Is grammar style consistent?
+   - Does it match user's vocabulary level and sentence structure?
+   - Is formality/casualness consistent with user's style?
+   - Are punctuation patterns similar?
+   - Does length match user's typical length?
+   - Is grammar style consistent?
 
 2. SENTIMENT/EMOTION ALIGNMENT:
-   ✓ Does emotional tone match the rating intensity?
-   ✓ Are the intensity markers appropriate (amazing/great/okay/bad/terrible)?
-   ✓ Does the sentiment strength match the user's typical expression level?
-   ✓ Is sentiment consistent throughout?
-   ✓ Does it convey appropriate emotion for this rating?
-   ✓ Are we using extreme words (amazing/terrible) vs moderate words (good/bad) correctly?
+   - Does emotional tone match the rating intensity?
+   - Are the intensity markers appropriate (amazing/great/okay/bad/terrible)?
+   - Does the sentiment strength match the user's typical expression level?
+   - Is sentiment consistent throughout?
+   - Does it convey appropriate emotion for this rating?
+   - Are we using extreme words (amazing/terrible) vs moderate words (good/bad) correctly?
 
 3. TOPIC/SEMANTIC ALIGNMENT:
-   ✓ Does it mention specific, concrete features of this business?
-   ✓ Does it use relevant vocabulary from item reviews?
-   ✓ Are topics semantically similar to what others mention?
-   ✓ Does it avoid generic phrases?
+   - Does it mention specific, concrete features of this product/book/business?
+   - Does it reflect the personality of the user and highlight their priorities and preferences?
+   - Does it use relevant vocabulary from item reviews?
+   - Are topics semantically similar to what others mention?
+   - Does it avoid generic phrases?
 
 4. COHERENCE:
-   ✓ Is it the right length?
-   ✓ Does it provide meaningful information?
-   ✓ Is it coherent and well-structured?
+   - Is it the right length?
+   - Does it provide meaningful information?
+   - Is it coherent and well-structured?
 
 REFINEMENT STRATEGY:
+- If personality and preferences do not fit: increase the user's identity highlighted in user_profile
 - If style mismatches: adjust vocabulary, structure, formality
 - If sentiment intensity is off: use stronger/weaker intensity markers (amazing→great→good→okay)
 - If sentiment is off: strengthen or soften emotional expression to match rating
-- If topics are generic: add specific business details
+- If topics are generic: add specific item details
 - If length is wrong: condense to match user's typical 2-5 sentence reviews
 - Maintain the rating unless clearly misaligned
 
