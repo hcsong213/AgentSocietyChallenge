@@ -280,12 +280,12 @@ Create a comprehensive structured profile with the following schema:
 OUTPUT SCHEMA (JSON format):
 {{
   "item_name": "[name of the item/business from the item details]",
-  "item_type": "[product type]",
+  "item_type": "[business type]",
   "common_themes": ["list", "of", "aspects", "people", "discuss"],
-  "theme_details": {
+  "theme_details": {{
     "theme1": "what people say about this theme",
     "theme2": "what people say about this theme"
-  },
+  }},
   "sentiment_distribution": {{
     "overall_sentiment": "[positive/negative/mixed]",
     "average_rating": [average],
@@ -324,10 +324,10 @@ OUTPUT SCHEMA (JSON format):
 {{
   "item_name": "[name of the item/business from the item details]",
   "common_themes": ["list", "of", "aspects", "people", "discuss"],
-  "theme_details": {
+  "theme_details": {{
     "theme1": "what people say about this theme",
     "theme2": "what people say about this theme"
-  },
+  }},
   "sentiment_distribution": {{
     "overall_sentiment": "[positive/negative/mixed]",
     "average_rating": [average],
@@ -367,10 +367,10 @@ OUTPUT SCHEMA (JSON format):
   "item_name": "[name of the item/business from the item details]",
   "item_type": "[business type]",
   "common_themes": ["list", "of", "aspects", "people", "discuss"],
-  "theme_details": {
+  "theme_details": {{
     "theme1": "what people say about this theme",
     "theme2": "what people say about this theme"
-  },
+  }},
   "sentiment_distribution": {{
     "overall_sentiment": "[positive/negative/mixed]",
     "average_rating": [average],
@@ -413,11 +413,11 @@ OUTPUT SCHEMA (JSON format):
   "item_name": "[name of the item/business from the item details]",
   "item_type": "[product/restaurant/hotel/book/service/etc.]",
   "common_themes": ["list", "of", "aspects", "people", "discuss"],
-  "theme_details": {{
+  "theme_details": {{{{
     "theme1": "what people say about this theme",
     "theme2": "what people say about this theme"
-  }},
-  "sentiment_distribution": {{
+  }}}},
+  "sentiment_distribution": {{{{
     "overall_sentiment": "[positive/negative/mixed]",
     "average_rating": [average],
     "rating_breakdown": "description of rating distribution"
