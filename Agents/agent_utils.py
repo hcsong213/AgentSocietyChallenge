@@ -240,6 +240,7 @@ def build_item_profile(llm, item_reviews: List[Dict], item_info: Dict) -> str:
     Returns:
         JSON string containing structured item profile
     """
+
     if not item_reviews:
         return json.dumps({
             "common_themes": [],
@@ -248,6 +249,15 @@ def build_item_profile(llm, item_reviews: List[Dict], item_info: Dict) -> str:
             "cons": [],
             "polarizing_aspects": []
         })
+
+    source = None
+    try:
+        source = item_info.get("source", None)
+        if not source and item_reviews:
+            source = item_reviews[0].get("source", None)
+    except:
+        source = None
+    source = (source or "").lower()
     
     # Sample generously - up to 15 reviews for comprehensive profiling
     sampled = sample_diverse_reviews(item_reviews, max_samples=15)
@@ -255,8 +265,138 @@ def build_item_profile(llm, item_reviews: List[Dict], item_info: Dict) -> str:
         f"Rating: {r.get('stars', 'N/A')} stars\nReview: {r.get('text', '')}"
         for r in sampled
     ])
+
+    if source == "amazon":
+        prompt = f"""Analyze existing reviews for this Amazon product and create a STRUCTURED ASPECT PROFILE.
+
+Item details:
+{json.dumps(item_info, ensure_ascii=False)}
+
+Item reviews ({len(sampled)} reviews):
+{reviews_text}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "item_name": "[name of the item/business from the item details]",
+  "item_type": "[product type]",
+  "common_themes": ["list", "of", "aspects", "people", "discuss"],
+  "theme_details": {
+    "theme1": "what people say about this theme",
+    "theme2": "what people say about this theme"
+  },
+  "sentiment_distribution": {{
+    "overall_sentiment": "[positive/negative/mixed]",
+    "average_rating": [average],
+    "rating_breakdown": "description of rating distribution"
+  }},
+  "pros": ["specific", "positive", "aspects", "with", "exact", "vocabulary"],
+  "cons": ["specific", "negative", "aspects", "with", "exact", "vocabulary"],
+  "polarizing_aspects": ["things some love and others hate"],
+  "common_vocabulary": ["words", "and", "phrases", "that", "appear", "frequently"],
+  "emotional_tone": "[enthusiastic/disappointed/balanced/etc.]",
+  "specific_mentions": ["concrete items/features people name"],
+
+  "usage_patterns": ["how customers typically use the product"],
+  "durability_feedback": ["comments about longevity, build quality"],
+  "value_for_money": "[perceived value: great/decent/poor]",
+  "comparison_points": ["how reviewers compare this item to alternatives, if relevant"],
+  "ease_of_use": "[easy/moderate/difficult]",
+  "feature_performance": ["specific product features and how well they work"]
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
     
-    prompt = f"""Analyze existing reviews for this item/business and create a STRUCTURED ASPECT PROFILE.
+    elif source == "goodreads":
+        prompt = f"""Analyze existing reviews for this Goodreads-listed book and create a STRUCTURED ASPECT PROFILE.
+
+Item details:
+{json.dumps(item_info, ensure_ascii=False)}
+
+Item reviews ({len(sampled)} reviews):
+{reviews_text}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "item_name": "[name of the item/business from the item details]",
+  "common_themes": ["list", "of", "aspects", "people", "discuss"],
+  "theme_details": {
+    "theme1": "what people say about this theme",
+    "theme2": "what people say about this theme"
+  },
+  "sentiment_distribution": {{
+    "overall_sentiment": "[positive/negative/mixed]",
+    "average_rating": [average],
+    "rating_breakdown": "description of rating distribution"
+  }},
+  "pros": ["specific", "positive", "aspects", "with", "exact", "vocabulary"],
+  "cons": ["specific", "negative", "aspects", "with", "exact", "vocabulary"],
+  "polarizing_aspects": ["things some love and others hate"],
+  "common_vocabulary": ["words", "and", "phrases", "that", "appear", "frequently"],
+  "emotional_tone": "[enthusiastic/disappointed/balanced/etc.]",
+  "specific_mentions": ["concrete items/features people name"],
+
+  "genre_classification": "[genre(s) based on item info and reviews]",
+  "writing_style_feedback": ["comments on prose, pacing, clarity, complexity"],
+  "plot_feedback": ["what reviewers say about plot quality"],
+  "character_feedback": ["opinions on character depth, relatability"],
+  "reading_experience": "[immersive/slow/dense/engaging/etc.]",
+  "comparisons_to_other_works": ["authors or works reviewers compare this to, if relevant"]
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
+
+    elif source == "yelp":
+        prompt = f"""Analyze existing reviews for this Yelp-listed business and create a STRUCTURED ASPECT PROFILE.
+
+Item details:
+{json.dumps(item_info, ensure_ascii=False)}
+
+Item reviews ({len(sampled)} reviews):
+{reviews_text}
+
+Create a comprehensive structured profile with the following schema:
+
+OUTPUT SCHEMA (JSON format):
+{{
+  "item_name": "[name of the item/business from the item details]",
+  "item_type": "[business type]",
+  "common_themes": ["list", "of", "aspects", "people", "discuss"],
+  "theme_details": {
+    "theme1": "what people say about this theme",
+    "theme2": "what people say about this theme"
+  },
+  "sentiment_distribution": {{
+    "overall_sentiment": "[positive/negative/mixed]",
+    "average_rating": [average],
+    "rating_breakdown": "description of rating distribution"
+  }},
+  "pros": ["specific", "positive", "aspects", "with", "exact", "vocabulary"],
+  "cons": ["specific", "negative", "aspects", "with", "exact", "vocabulary"],
+  "polarizing_aspects": ["things some love and others hate"],
+  "common_vocabulary": ["words", "and", "phrases", "that", "appear", "frequently"],
+  "emotional_tone": "[enthusiastic/disappointed/balanced/etc.]",
+  "specific_mentions": ["concrete items/features people name"],
+
+  "food_quality": ["comments on taste, freshness, portion size OR 'N/A' if irrelevant to the business"],
+  "service_quality": ["attentiveness, speed, friendliness OR 'N/A' if irrelevant to the business"],
+  "ambiance_feedback": ["vibe, decor, noise OR 'N/A' if irrelevant to the business"],
+  "price_sensitivity": "[expensive/moderate/cheap/value-focused/etc.]",
+  "wait_time_feedback": ["comments on wait times OR 'N/A' if irrelevant to the business]",
+  "popular_dishes_or_services": ["menu items OR key services offered for non-food businesses"],
+  "recurring_issues": ["recurring complaints (service, cleanliness, reliability, etc.)"]
+}}
+
+Provide ONLY the JSON object, no additional text.
+"""
+
+    else: 
+        prompt = f"""Analyze existing reviews for this item/business and create a STRUCTURED ASPECT PROFILE.
 
 NOTE: The 'item' can be either a physical product OR a service/business (restaurant, hotel, etc.) OR a book.
 
