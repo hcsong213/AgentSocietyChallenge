@@ -1,4 +1,4 @@
-"""Structured Profile Agent - Non-looping approach with explicit profiling stages.
+"""Structured Profile Agent
 
 This agent implements a structured workflow:
 1. Build comprehensive user profile
@@ -64,7 +64,7 @@ class StructuredProfileAgent(SimulationAgent):
                 # Step 3: Cross-reasoning (user x item alignment)
                 alignment_plan = self._cross_reasoning(user_profile, item_profile, item_info)
             else:
-                # Skip profiling - use minimal placeholders
+                # Skip profiling
                 user_profile = json.dumps({
                     "note": "Profiling disabled for ablation study",
                     "user_data": user_profile_raw

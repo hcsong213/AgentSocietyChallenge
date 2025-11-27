@@ -68,7 +68,7 @@ class EnsembleReviewsAgent(SimulationAgent):
             final = self._critic_aggregate(drafts, user_reviews, item_info, item_reviews)
             logger.info(f"Critic produced stars={final.get('stars')} review length={len(final.get('review', ''))}")
 
-            # Final lightweight refinement to match user's voice
+            # Final refinement to match user's voice
             if self.enable_refinement:
                 refined = refine_review(self.llm, final, user_profile_json, item_profile_json, 
                                       user_reviews, item_reviews)

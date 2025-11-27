@@ -487,31 +487,31 @@ ITEM'S PAST REVIEW EXAMPLES:
 CRITIQUE CHECKLIST:
 
 1. STYLE CONSISTENCY:
-   ✓ Does it match user's vocabulary level and sentence structure?
-   ✓ Is formality/casualness consistent with user's style?
-   ✓ Are punctuation patterns similar?
-   ✓ Does length match user's typical length?
-   ✓ Is grammar style consistent?
+   - Does it match user's vocabulary level and sentence structure?
+   - Is formality/casualness consistent with user's style?
+   - Are punctuation patterns similar?
+   - Does length match user's typical length?
+   - Is grammar style consistent?
 
 2. SENTIMENT/EMOTION ALIGNMENT:
-   ✓ Does emotional tone match the rating intensity?
-   ✓ Are the intensity markers appropriate (amazing/great/okay/bad/terrible)?
-   ✓ Does the sentiment strength match the user's typical expression level?
-   ✓ Is sentiment consistent throughout?
-   ✓ Does it convey appropriate emotion for this rating?
-   ✓ Are we using extreme words (amazing/terrible) vs moderate words (good/bad) correctly?
+   - Does emotional tone match the rating intensity?
+   - Are the intensity markers appropriate (amazing/great/okay/bad/terrible)?
+   - Does the sentiment strength match the user's typical expression level?
+   - Is sentiment consistent throughout?
+   - Does it convey appropriate emotion for this rating?
+   - Are we using extreme words (amazing/terrible) vs moderate words (good/bad) correctly?
 
 3. TOPIC/SEMANTIC ALIGNMENT:
-   ✓ Does it mention specific, concrete features of this product/book/business?
-   ✓ Does it reflect the personality of the user and highlight their priorities and preferences?
-   ✓ Does it use relevant vocabulary from item reviews?
-   ✓ Are topics semantically similar to what others mention?
-   ✓ Does it avoid generic phrases?
+   - Does it mention specific, concrete features of this product/book/business?
+   - Does it reflect the personality of the user and highlight their priorities and preferences?
+   - Does it use relevant vocabulary from item reviews?
+   - Are topics semantically similar to what others mention?
+   - Does it avoid generic phrases?
 
 4. COHERENCE:
-   ✓ Is it the right length?
-   ✓ Does it provide meaningful information?
-   ✓ Is it coherent and well-structured?
+   - Is it the right length?
+   - Does it provide meaningful information?
+   - Is it coherent and well-structured?
 
 REFINEMENT STRATEGY:
 - If personality and preferences do not fit: increase the user's identity highlighted in user_profile

@@ -301,8 +301,8 @@ CRITICAL INSTRUCTIONS - You must balance TWO requirements:
    - AVOID generic comments ("good food", "nice place") - be business-specific!
  
 THINK OF IT THIS WAY:
-- The EXAMPLES show you the user's authentic "voice" and writing patterns → copy this style
-- The INSIGHTS tell you the message/content this specific review should convey → use these facts
+- The EXAMPLES show you the user's authentic "voice" and writing patterns -> copy this style
+- The INSIGHTS tell you the message/content this specific review should convey -> use these facts
 - Your job: deliver the insights' message while sounding EXACTLY like the user in the examples
 
 (IMPORTANT) COMMON MISTAKE TO AVOID:
