@@ -218,7 +218,7 @@ Provide ONLY the JSON object, no additional text.
 """
 
     messages = [{"role": "user", "content": prompt}]
-    response = llm(messages=messages, temperature=0.0, max_tokens=800).strip()
+    response = llm(messages=messages, temperature=0.0, max_tokens=1200).strip()
     
     # Try to parse as JSON, if it fails return the raw response
     try:

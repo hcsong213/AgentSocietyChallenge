@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
 from websocietysimulator import Simulator
 from websocietysimulator.agent import SimulationAgent
-from websocietysimulator.llm import LLMBase, OpenAILLM
+from websocietysimulator.llm import *
 from Util.ollama_llm import OllamaLLM
 
 logger = logging.getLogger(__name__)
@@ -221,7 +221,7 @@ def experiment_llm_comparison(
     Args:
         agent_class: Agent class to use for comparison
         llm_configs: List of LLM configurations. Each config should have:
-                    - 'type': 'ollama' or 'openai'
+                    - 'type': 'ollama', 'openai', or 'google'
                     - 'model': model name
                     - 'api_key': (optional, for OpenAI)
                     If None, defaults to common Ollama models + GPT-3.5-turbo
@@ -238,9 +238,9 @@ def experiment_llm_comparison(
             {"type": "ollama", "model": "qwen2.5:3b"},
             {"type": "ollama", "model": "mistral"},
             {"type": "ollama", "model": "llama3.1:8b"},
-            {"type": "openai", "model": "gpt-3.5-turbo"}
+            {"type": "google", "model": "gemini-2.5-flash"}
         ]
-    
+
     print("="*60)
     print("LLM COMPARISON EXPERIMENT")
     print("="*60)
@@ -248,10 +248,10 @@ def experiment_llm_comparison(
     print(f"LLMs: {[cfg['model'] for cfg in llm_configs]}")
     print(f"Datasets: {datasets}")
     print(f"Tasks per dataset: {number_of_tasks}")
-    
+
     # Setup
     simulator = Simulator(data_dir="dataset", device="gpu", cache=True)
-    
+
     comparison_results = {
         "experiment_type": "llm_comparison",
         "agent": agent_class.__name__,
@@ -259,16 +259,16 @@ def experiment_llm_comparison(
         "number_of_tasks_per_dataset": number_of_tasks,
         "llms": {}
     }
-    
+
     # Evaluate each LLM
     for llm_config in llm_configs:
         llm_type = llm_config["type"]
         model_name = llm_config["model"]
-        
+
         print(f"\n{'='*60}")
         print(f"Evaluating {model_name} ({llm_type})")
         print(f"{'='*60}")
-        
+
         # Initialize LLM
         try:
             if llm_type == "ollama":
@@ -279,10 +279,20 @@ def experiment_llm_comparison(
                     print(f"WARNING: No OpenAI API key found. Skipping {model_name}")
                     continue
                 llm = OpenAILLM(api_key=api_key, model=model_name)
+            elif llm_type == "google":
+                api_key = (
+                    llm_config.get("api_key")
+                    or os.environ.get("GEMINI_API_KEY")
+                    or os.environ.get("GOOGLE_API_KEY")
+                )
+                if not api_key:
+                    print(f"WARNING: No Google API key found. Skipping {model_name}")
+                    continue
+                llm = GoogleLLM(api_key=api_key, model=model_name)
             else:
                 print(f"WARNING: Unknown LLM type '{llm_type}'. Skipping {model_name}")
                 continue
-            
+
             results = evaluate_across_datasets(
                 simulator=simulator,
                 agent_class=agent_class,
@@ -290,28 +300,28 @@ def experiment_llm_comparison(
                 datasets=datasets,
                 number_of_tasks=number_of_tasks
             )
-            
+
             comparison_results["llms"][f"{model_name}_{llm_type}"] = results
-            
+
         except Exception as e:
             print(f"ERROR evaluating {model_name}: {e}")
             logger.exception(f"Failed to evaluate {model_name}")
             continue
-    
+
     # Save results
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = Path(output_base_dir) / "LLMComparison"
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     output_path = output_dir / f"llm_comparison_{timestamp}.json"
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(comparison_results, f, indent=4, ensure_ascii=False)
-    
+
     print(f"\n{'='*60}")
     print("LLM COMPARISON COMPLETE")
     print(f"Results saved to: {output_path}")
     print(f"{'='*60}")
-    
+
     # Print summary comparison
     print("\nSUMMARY COMPARISON (Aggregated Metrics):")
     print("-" * 60)
@@ -319,7 +329,7 @@ def experiment_llm_comparison(
         print(f"\n{llm_name}:")
         for metric, value in llm_results["aggregated_metrics"].items():
             print(f"  {metric}: {value:.4f}")
-    
+
     return comparison_results
 
 
@@ -451,24 +461,30 @@ if __name__ == "__main__":
     from Agents.reasoning_loop_agent import ReasoningLoopAgent
     from Agents.ensemble_reviews_agent import EnsembleReviewsAgent
     
-    # Example: Run agent comparison
-    print("Running Agent Comparison Experiment...")
-    agent_comparison_results = experiment_agent_comparison(
-        agent_classes=[BaselineAgent, StructuredProfileAgent, ReasoningLoopAgent, EnsembleReviewsAgent],
-        llm_model="mistral",
-        datasets=["yelp", "amazon", "goodreads"],  # Start with one dataset for testing
-        number_of_tasks=1  # Small number for testing
-    )
-    
-    # Example: Run LLM comparison
-    # print("\nRunning LLM Comparison Experiment...")
-    # llm_comparison_results = experiment_llm_comparison(
-    #     agent_class=StructuredProfileAgent,
-    #     datasets=["yelp"],
-    #     number_of_tasks=10
+    # # Example: Run agent comparison
+    # print("Running Agent Comparison Experiment...")
+    # agent_comparison_results = experiment_agent_comparison(
+    #     agent_classes=[BaselineAgent, StructuredProfileAgent, ReasoningLoopAgent, EnsembleReviewsAgent],
+    #     llm_model="mistral",
+    #     datasets=["yelp", "amazon", "goodreads"],  # Start with one dataset for testing
+    #     number_of_tasks=1  # Small number for testing
     # )
     
-    # Example: Run ablation study
+    # Example: Run LLM comparison
+    print("\nRunning LLM Comparison Experiment...")
+    llm_comparison_results = experiment_llm_comparison(
+        agent_class=StructuredProfileAgent,
+        datasets=["yelp"],
+        number_of_tasks=1,
+        llm_configs = [
+            # {"type": "ollama", "model": "qwen2.5:3b"},
+            # {"type": "ollama", "model": "mistral"},
+            # {"type": "ollama", "model": "llama3.1:8b"},
+            {"type": "google", "model": "gemini-2.5-flash"}
+        ]
+    )
+    
+    # # Example: Run ablation study
     # print("\nRunning Ablation Study...")
     # ablation_results = experiment_ablation_study(
     #     agent_class=StructuredProfileAgent,
