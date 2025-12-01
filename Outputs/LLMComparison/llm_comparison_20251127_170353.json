@@ -1,0 +1,153 @@
+{
+    "experiment_type": "llm_comparison",
+    "agent": "StructuredProfileAgent",
+    "datasets": [
+        "yelp",
+        "amazon",
+        "goodreads"
+    ],
+    "number_of_tasks_per_dataset": 75,
+    "llms": {
+        "llama3.1:8b_ollama": {
+            "agent": "StructuredProfileAgent",
+            "llm_model": "llama3.1:8b",
+            "datasets": {
+                "yelp": {
+                    "metrics": {
+                        "preference_estimation": 0.8280000000000001,
+                        "review_generation": 0.6801770198228936,
+                        "overall_quality": 0.7540885099114468
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "amazon": {
+                    "metrics": {
+                        "preference_estimation": 0.78,
+                        "review_generation": 0.7110775363952571,
+                        "overall_quality": 0.7455387681976285
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "goodreads": {
+                    "metrics": {
+                        "preference_estimation": 0.864,
+                        "review_generation": 0.7192796580565728,
+                        "overall_quality": 0.7916398290282864
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                }
+            },
+            "aggregated_metrics": {
+                "preference_estimation": 0.824,
+                "review_generation": 0.7035114047582413,
+                "overall_quality": 0.7637557023791205
+            }
+        },
+        "qwen2.5:3b_ollama": {
+            "agent": "StructuredProfileAgent",
+            "llm_model": "qwen2.5:3b",
+            "datasets": {
+                "yelp": {
+                    "metrics": {
+                        "preference_estimation": 0.8324,
+                        "review_generation": 0.7965193671320896,
+                        "overall_quality": 0.8144596835660448
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "amazon": {
+                    "metrics": {
+                        "preference_estimation": 0.8543200000000001,
+                        "review_generation": 0.8625316774599535,
+                        "overall_quality": 0.8584258387299768
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "goodreads": {
+                    "metrics": {
+                        "preference_estimation": 0.8138666666666667,
+                        "review_generation": 0.8647288884211068,
+                        "overall_quality": 0.8392977775438868
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                }
+            },
+            "aggregated_metrics": {
+                "preference_estimation": 0.833528888888889,
+                "review_generation": 0.84125997767105,
+                "overall_quality": 0.8373944332799694
+            }
+        },
+        "mistral_ollama": {
+            "agent": "StructuredProfileAgent",
+            "llm_model": "mistral",
+            "datasets": {
+                "yelp": {
+                    "metrics": {
+                        "preference_estimation": 0.8221333333333334,
+                        "review_generation": 0.7948090470267917,
+                        "overall_quality": 0.8084711901800625
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "amazon": {
+                    "metrics": {
+                        "preference_estimation": 0.8882666666666666,
+                        "review_generation": 0.8674550473615853,
+                        "overall_quality": 0.877860857014126
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                },
+                "goodreads": {
+                    "metrics": {
+                        "preference_estimation": 0.8148000000000001,
+                        "review_generation": 0.8646850585587604,
+                        "overall_quality": 0.8397425292793803
+                    },
+                    "data_info": {
+                        "evaluated_count": 75,
+                        "original_simulation_count": 75,
+                        "original_ground_truth_count": 400
+                    }
+                }
+            },
+            "aggregated_metrics": {
+                "preference_estimation": 0.8417333333333333,
+                "review_generation": 0.8423163843157125,
+                "overall_quality": 0.8420248588245229
+            }
+        }
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "experiment_type": "llm_comparison",
+    "agent": "StructuredProfileAgent",
+    "datasets": [
+        "yelp"
+    ],
+    "number_of_tasks_per_dataset": 30,
+    "llms": {
+        "gemini-2.5-flash_google": {
+            "agent": "StructuredProfileAgent",
+            "llm_model": "gemini-2.5-flash",
+            "datasets": {
+                "yelp": {
+                    "metrics": {
+                        "preference_estimation": 0.7899999999999999,
+                        "review_generation": 0.7444850693356488,
+                        "overall_quality": 0.7672425346678244
+                    },
+                    "data_info": {
+                        "evaluated_count": 30,
+                        "original_simulation_count": 30,
+                        "original_ground_truth_count": 400
+                    }
+                }
+            },
+            "aggregated_metrics": {
+                "preference_estimation": 0.7899999999999999,
+                "review_generation": 0.7444850693356488,
+                "overall_quality": 0.7672425346678244
+            }
+        }
+    }
+}
