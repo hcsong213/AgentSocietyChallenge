@@ -22,6 +22,7 @@ from websocietysimulator import Simulator
 from websocietysimulator.agent import SimulationAgent
 from websocietysimulator.llm import *
 from Util.ollama_llm import OllamaLLM
+from Util.gemini_llm import GoogleLLM
 
 logger = logging.getLogger(__name__)
 
@@ -461,34 +462,34 @@ if __name__ == "__main__":
     from Agents.reasoning_loop_agent import ReasoningLoopAgent
     from Agents.ensemble_reviews_agent import EnsembleReviewsAgent
     
-    # # Example: Run agent comparison
-    # print("Running Agent Comparison Experiment...")
-    # agent_comparison_results = experiment_agent_comparison(
-    #     agent_classes=[BaselineAgent, StructuredProfileAgent, ReasoningLoopAgent, EnsembleReviewsAgent],
-    #     llm_model="mistral",
-    #     datasets=["yelp", "amazon", "goodreads"],  # Start with one dataset for testing
-    #     number_of_tasks=1  # Small number for testing
-    # )
-    
-    # Example: Run LLM comparison
-    print("\nRunning LLM Comparison Experiment...")
-    llm_comparison_results = experiment_llm_comparison(
-        agent_class=StructuredProfileAgent,
-        datasets=["yelp"],
-        number_of_tasks=1,
-        llm_configs = [
-            # {"type": "ollama", "model": "qwen2.5:3b"},
-            # {"type": "ollama", "model": "mistral"},
-            # {"type": "ollama", "model": "llama3.1:8b"},
-            {"type": "google", "model": "gemini-2.5-flash"}
-        ]
+    # Example: Run agent comparison
+    print("Running Agent Comparison Experiment...")
+    agent_comparison_results = experiment_agent_comparison(
+       agent_classes=[BaselineAgent],
+       llm_model="gemma3:1b",
+       datasets=["yelp"],  # Start with one dataset for testing
+       number_of_tasks=1  # Small number for testing
     )
     
-    # # Example: Run ablation study
+    # Example: Run LLM comparison
+    # print("\nRunning LLM Comparison Experiment...")
+    # llm_comparison_results = experiment_llm_comparison(
+    #    agent_class=StructuredProfileAgent,
+    #    datasets=["yelp"],
+    #    number_of_tasks=1,
+    #    llm_configs = [
+    #        # {"type": "ollama", "model": "qwen2.5:3b"},
+    #        # {"type": "ollama", "model": "mistral"},
+    #        # {"type": "ollama", "model": "llama3.1:8b"},
+    #        {"type": "google", "model": "gemini-2.5-flash"}
+    #    ]
+    # )
+    
+    # Example: Run ablation study
     # print("\nRunning Ablation Study...")
     # ablation_results = experiment_ablation_study(
-    #     agent_class=StructuredProfileAgent,
-    #     llm_model="mistral",
-    #     datasets=["yelp"],
-    #     number_of_tasks=10
+    #    agent_class=StructuredProfileAgent,
+    #    llm_model="mistral",
+    #    datasets=["yelp", "amazon", "goodreads"],
+    #    number_of_tasks=75
     # )
