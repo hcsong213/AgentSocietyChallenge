@@ -516,7 +516,7 @@ CRITIQUE CHECKLIST:
 REFINEMENT STRATEGY:
 - If personality and preferences do not fit: increase the user's identity highlighted in user_profile
 - If style mismatches: adjust vocabulary, structure, formality
-- If sentiment intensity is off: use stronger/weaker intensity markers (amazing→great→good→okay)
+- If sentiment intensity is off: use stronger/weaker intensity markers (amazing > great > good > okay)
 - If sentiment is off: strengthen or soften emotional expression to match rating
 - If topics are generic: add specific item details
 - If length is wrong: condense to match user's typical 2-5 sentence reviews
